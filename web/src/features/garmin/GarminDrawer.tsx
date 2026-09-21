@@ -32,7 +32,12 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
   const [password, setPassword] = useState('')
   const [mfaCode, setMfaCode] = useState('')
   const [challenge, setChallenge] = useState<{ id: string; expiresAt?: string }>()
-  const { data: connection, isLoading } = useGetGarminConnectionQuery(undefined, { skip: !open })
+  const {
+    data: connection,
+    isError: connectionError,
+    isLoading,
+    refetch,
+  } = useGetGarminConnectionQuery(undefined, { skip: !open })
   const [connectGarmin, connectState] = useConnectGarminMutation()
   const [verifyMfa, verifyState] = useVerifyGarminMfaMutation()
 
@@ -96,13 +101,26 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
           </Tooltip>
         </Stack>
 
-        {isLoading ? <CircularProgress aria-label="Loading Garmin status" /> : (
+        {connectionError && (
+          <Alert action={<Button onClick={() => void refetch()}>Retry</Button>} severity="error">
+            Garmin status could not be loaded. Existing Health Hub data is unaffected.
+          </Alert>
+        )}
+        {isLoading ? <CircularProgress aria-label="Loading Garmin status" /> : !connectionError && (
           <Alert icon={<LinkRounded />} severity={connected ? 'success' : connection?.status === 'reconnect_required' ? 'warning' : 'info'}>
             <strong>{connected ? 'Connected' : connection?.status === 'reconnect_required' ? 'Reconnect required' : 'Not connected'}</strong>
             {connection?.garminEmail && <div>{connection.garminEmail}</div>}
             {connection?.lastSuccessfulSyncAt && (
               <div title={connection.lastSuccessfulSyncAt}>Last sync {new Date(connection.lastSuccessfulSyncAt).toLocaleString()}</div>
             )}
+          </Alert>
+        )}
+
+        {connection?.lastErrorCode && (
+          <Alert severity="warning">
+            {connection.lastErrorCode === 'garmin_reconnect_required'
+              ? 'Garmin access must be refreshed before the next sync.'
+              : 'The last Garmin operation did not complete. Refresh access or try again.'}
           </Alert>
         )}
 

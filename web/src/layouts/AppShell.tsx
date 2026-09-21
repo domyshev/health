@@ -53,21 +53,25 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
   const { data: connection } = useGetGarminConnectionQuery()
   const [startSync, startState] = useStartSyncMutation()
   const [logout, logoutState] = useLogoutMutation()
-  const { data: syncRun } = useGetSyncRunQuery(syncRunId ?? '', {
-    skip: !syncRunId,
-    pollingInterval: visible && syncRunId ? 1000 : 0,
-    skipPollingIfUnfocused: true,
+  const effectiveSyncRunId = syncRunId ?? connection?.activeSyncRunId
+  const { data: syncRun, refetch: refetchSyncRun } = useGetSyncRunQuery(effectiveSyncRunId ?? '', {
+    skip: !effectiveSyncRunId,
   })
 
   const active = startState.isLoading || syncRun?.status === 'queued' || syncRun?.status === 'running'
   const connected = connection?.status === 'connected'
 
   useEffect(() => {
+    if (!visible || !effectiveSyncRunId || ['succeeded', 'failed', 'reconnect_required'].includes(syncRun?.status ?? '')) return
+    const timer = window.setInterval(() => void refetchSyncRun(), 1000)
+    return () => window.clearInterval(timer)
+  }, [effectiveSyncRunId, refetchSyncRun, syncRun?.status, visible])
+
+  useEffect(() => {
     if (!syncRun || !['succeeded', 'failed', 'reconnect_required'].includes(syncRun.status)) return
     if (completedRunRef.current === syncRun.id) return
     completedRunRef.current = syncRun.id
     dispatch(healthApi.util.invalidateTags(['Activities', 'Garmin']))
-    if (syncRun.status === 'reconnect_required') setDrawerOpen(true)
   }, [dispatch, syncRun])
 
   async function beginSync() {
@@ -84,23 +88,28 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
   async function endSession() {
     try {
       await logout().unwrap()
-    } finally {
       dispatch(healthApi.util.resetApiState())
       dispatch(resetUiState())
       localStorage.removeItem('persist:health-hub:ui')
       onLoggedOut()
+    } catch {
+      // Keep the local session until the API confirms that the server session ended.
     }
   }
 
-  const syncLabel = syncRun?.status === 'succeeded'
-    ? 'Sync complete'
-    : syncRun?.status === 'failed'
-      ? 'Sync failed'
-      : active
-        ? 'Syncing'
-        : connection?.lastSuccessfulSyncAt
-          ? `Last sync ${new Date(connection.lastSuccessfulSyncAt).toLocaleString()}`
-          : 'Never synced'
+  const syncLabel = connection?.status === 'reconnect_required'
+    ? 'Reconnect required'
+    : syncRun?.status === 'succeeded'
+      ? 'Sync complete'
+      : syncRun?.status === 'failed'
+        ? 'Sync failed'
+        : syncRun?.status === 'queued'
+          ? 'Sync queued'
+          : active
+            ? 'Syncing'
+            : connection?.lastSuccessfulSyncAt
+              ? `Last sync ${new Date(connection.lastSuccessfulSyncAt).toLocaleString()}`
+              : 'Never synced'
 
   return (
     <Box sx={{ minHeight: '100dvh' }}>
@@ -108,7 +117,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
         <Toolbar sx={{ gap: 1.25 }}>
           <Typography sx={{ flexGrow: 1, fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health Hub</Typography>
           <Chip
-            color={syncRun?.status === 'failed' ? 'error' : syncRun?.status === 'succeeded' ? 'success' : 'default'}
+            color={syncRun?.status === 'failed' ? 'error' : connection?.status === 'reconnect_required' ? 'warning' : syncRun?.status === 'succeeded' ? 'success' : 'default'}
             label={syncLabel}
             size="small"
             sx={{ display: { xs: 'none', md: 'inline-flex' } }}
@@ -141,6 +150,14 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
         <Alert action={<Button onClick={() => void beginSync()}>Retry</Button>} severity="error">
           Sync failed. Existing activities remain available.
         </Alert>
+      )}
+      {syncRun?.status === 'reconnect_required' && (
+        <Alert action={<Button onClick={() => setDrawerOpen(true)}>Refresh Garmin access</Button>} severity="warning">
+          Garmin access must be refreshed before syncing can continue.
+        </Alert>
+      )}
+      {logoutState.isError && (
+        <Alert severity="error">Logout could not be completed. Your session is still active; try again.</Alert>
       )}
       <Box component="main" sx={{ mx: 'auto', maxWidth: 1180, p: { xs: 2, sm: 4 } }}>
         <Routes>

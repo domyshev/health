@@ -43,7 +43,9 @@ describe('passwordless authentication', () => {
     await user.type(await screen.findByLabelText(/email/i), 'runner@example.com')
     await user.click(screen.getByRole('button', { name: /send code/i }))
     expect(await screen.findByRole('button', { name: /resend in/i })).toBeDisabled()
-    await user.type(await screen.findByLabelText(/verification code/i), '123456')
+    const codeInput = await screen.findByLabelText(/verification code/i)
+    expect(codeInput).toHaveFocus()
+    await user.type(codeInput, '123456')
     await user.click(screen.getByRole('button', { name: /verify/i }))
 
     expect(await screen.findByRole('heading', { name: /activities/i })).toBeInTheDocument()
@@ -54,5 +56,35 @@ describe('passwordless authentication', () => {
         expect.objectContaining({ credentials: 'include', method: 'POST' }),
       )
     })
+  })
+
+  it('shows a safe recoverable message when requesting a code is rate limited', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path.endsWith('/v1/me')) return json({ error: { code: 'unauthorized' } }, 401)
+      if (path.endsWith('/v1/auth/request-code')) {
+        return json({ error: { code: 'rate_limited', message: 'too many requests' } }, 429)
+      }
+      throw new Error(`Unexpected request: ${path}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+
+    render(<App />, { wrapper: TestProviders })
+
+    await user.type(await screen.findByLabelText(/email/i), 'runner@example.com')
+    await user.click(screen.getByRole('button', { name: /send code/i }))
+
+    expect(await screen.findByText(/too many code requests/i)).toBeInTheDocument()
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
+  })
+
+  it('shows a recoverable bootstrap error instead of treating a network failure as logout', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('offline')))
+
+    render(<App />, { wrapper: TestProviders })
+
+    expect(await screen.findByText(/temporarily unavailable/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument()
   })
 })

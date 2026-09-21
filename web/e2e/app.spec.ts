@@ -1,4 +1,5 @@
 import { expect, test, type Page, type Route } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
 
 const user = { id: 'user-1', email: 'runner@example.com', displayName: 'Runner', role: 'user' }
 
@@ -49,10 +50,15 @@ test('passwordless login opens the dashboard and logout ends the server session'
   await mockBaseApi(page, false)
   await page.goto('/')
 
-  await page.getByLabel('Email').fill('runner@example.com')
-  await page.getByRole('button', { name: 'Send code' }).click()
-  await page.getByLabel('Verification code').fill('123456')
-  await page.getByRole('button', { name: 'Verify' }).click()
+  const email = page.getByLabel('Email')
+  await email.fill('runner@example.com')
+  await email.press('Tab')
+  await expect(page.getByRole('button', { name: 'Send code' })).toBeFocused()
+  await page.keyboard.press('Enter')
+  const code = page.getByLabel('Verification code')
+  await expect(code).toBeFocused()
+  await code.fill('123456')
+  await code.press('Enter')
 
   await expect(page.getByRole('heading', { name: 'Activities' })).toBeVisible()
   if (!testInfo.project.name.includes('mobile')) await expect(page.getByText('Runner')).toBeVisible()
@@ -124,4 +130,21 @@ test('manual sync reaches completion and activity filter updates the cursor quer
   await page.getByLabel('Activity type').click()
   await page.getByRole('option', { name: 'swimming' }).click()
   await expect.poll(() => filtered).toBe(true)
+})
+
+test('login and dashboard pass automated accessibility checks', async ({ page }) => {
+  await mockBaseApi(page, false)
+  await page.goto('/')
+
+  const loginResults = await new AxeBuilder({ page }).analyze()
+  expect(loginResults.violations).toEqual([])
+
+  await page.getByLabel('Email').fill('runner@example.com')
+  await page.getByRole('button', { name: 'Send code' }).click()
+  await page.getByLabel('Verification code').fill('123456')
+  await page.getByRole('button', { name: 'Verify' }).click()
+  await expect(page.getByRole('heading', { name: 'Activities' })).toBeVisible()
+
+  const dashboardResults = await new AxeBuilder({ page }).analyze()
+  expect(dashboardResults.violations).toEqual([])
 })

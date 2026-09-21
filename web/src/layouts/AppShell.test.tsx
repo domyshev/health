@@ -58,8 +58,75 @@ describe('protected application shell', () => {
     await user.click(syncButton)
     expect((await screen.findAllByText(/sync complete/i, {}, { timeout: 5000 })).length).toBeGreaterThan(0)
     await waitFor(() => expect(activityReads).toBeGreaterThan(1))
+    const readsAfterCompletion = syncReads
+    await new Promise((resolve) => window.setTimeout(resolve, 1200))
+    expect(syncReads).toBe(readsAfterCompletion)
 
     await user.click(screen.getByRole('button', { name: /log out/i }))
     await waitFor(() => expect(onLoggedOut).toHaveBeenCalledOnce())
+  })
+
+  it('keeps the local session when server logout fails', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path.includes('/v1/activities')) return json({ items: [], nextCursor: '' })
+      if (path.endsWith('/v1/integrations/garmin')) return json({ status: 'not_connected' })
+      if (path.endsWith('/v1/auth/logout')) {
+        return json({ error: { code: 'service_unavailable', message: 'try again' } }, 503)
+      }
+      throw new Error(`Unexpected request: ${path}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const onLoggedOut = vi.fn()
+    const user = userEvent.setup()
+
+    render(
+      <AppShell
+        onLoggedOut={onLoggedOut}
+        user={{ id: 'user-1', displayName: 'Runner', email: 'runner@example.com', role: 'user' }}
+      />,
+      { wrapper: TestProviders },
+    )
+
+    await user.click(await screen.findByRole('button', { name: /log out/i }))
+
+    expect(await screen.findByText(/could not be completed/i)).toBeInTheDocument()
+    expect(onLoggedOut).not.toHaveBeenCalled()
+  })
+
+  it('resumes polling an active run reported by the Garmin status endpoint', async () => {
+    let syncReads = 0
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path.includes('/v1/activities')) return json({ items: [], nextCursor: '' })
+      if (path.endsWith('/v1/integrations/garmin')) {
+        return json({ status: 'connected', activeSyncRunId: 'active-run' })
+      }
+      if (path.endsWith('/v1/sync-runs/active-run')) {
+        syncReads += 1
+        return json({
+          id: 'active-run',
+          status: 'running',
+          startedAt: '2026-09-21T13:00:00Z',
+          discoveredCount: 0,
+          importedCount: 0,
+          updatedCount: 0,
+          failedCount: 0,
+        })
+      }
+      throw new Error(`Unexpected request: ${path}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(
+      <AppShell
+        onLoggedOut={() => undefined}
+        user={{ id: 'user-1', displayName: 'Runner', email: 'runner@example.com', role: 'user' }}
+      />,
+      { wrapper: TestProviders },
+    )
+
+    expect((await screen.findAllByText(/syncing/i)).length).toBeGreaterThan(0)
+    expect(syncReads).toBeGreaterThan(0)
   })
 })

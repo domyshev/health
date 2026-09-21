@@ -6,6 +6,14 @@ import { Alert, Box, Button, Card, CardContent, CircularProgress, Stack, TextFie
 import { healthApi, useRequestCodeMutation, useVerifyCodeMutation } from '../../api/healthApi'
 import type { AppDispatch } from '../../store'
 
+function requestErrorMessage(error: unknown) {
+  if (error && typeof error === 'object' && 'data' in error) {
+    const data = (error as { data?: { code?: string } }).data
+    if (data?.code === 'rate_limited') return 'Too many code requests. Wait a moment and try again.'
+  }
+  return 'The code request could not be completed. Try again.'
+}
+
 export function LoginPage() {
   const dispatch = useDispatch<AppDispatch>()
   const [email, setEmail] = useState('')
@@ -79,6 +87,7 @@ export function LoginPage() {
                     type="email"
                     value={email}
                   />
+                  {requestState.isError && <Alert severity="error">{requestErrorMessage(requestState.error)}</Alert>}
                   <Button endIcon={<ArrowForwardRounded />} type="submit" variant="contained">
                     {requestState.isLoading ? <CircularProgress size={22} /> : 'Send code'}
                   </Button>
@@ -90,6 +99,7 @@ export function LoginPage() {
                   <Alert severity="info">If the address is allowed, a code was sent to {email}.</Alert>
                   <TextField
                     autoComplete="one-time-code"
+                    autoFocus
                     label="Verification code"
                     onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
                     required
@@ -97,6 +107,7 @@ export function LoginPage() {
                     value={code}
                   />
                   {verifyState.isError && <Alert severity="error">The code is invalid or expired.</Alert>}
+                  {requestState.isError && <Alert severity="error">{requestErrorMessage(requestState.error)}</Alert>}
                   <Button disabled={code.length !== 6} type="submit" variant="contained">
                     {verifyState.isLoading ? <CircularProgress size={22} /> : 'Verify'}
                   </Button>
