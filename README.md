@@ -1,11 +1,12 @@
 # health-hub
 
-A self-hosted personal health, fitness, and nutrition data platform. The current implementation provides a Go JSON API with passwordless email authentication and a read-only Garmin Connect importer with local raw-file packages, PostgreSQL persistence, incremental synchronization, and swimming normalization.
+A self-hosted personal health, fitness, and nutrition data platform. The current implementation provides a responsive React dashboard, a Go JSON API with passwordless email authentication, and a read-only Garmin Connect importer with local raw-file packages, PostgreSQL persistence, incremental synchronization, and swimming normalization.
 
 ## Components
 
 - `importer/` — Python 3.12 Garmin importer. This is the only component that communicates with Garmin Connect or reads Garmin OAuth tokens.
 - `api/` — Go API for passwordless authentication, secure browser sessions, normalized health reads, Garmin connection state, and manual synchronization.
+- `web/` — React 19, Material UI, Redux Toolkit, and RTK Query dashboard for login, activities, Garmin connection, and manual sync.
 - `migrations/` — PostgreSQL schema and least-privilege roles for authentication, Garmin integration state, raw resources, original files, and normalized health data.
 - `garmin_probe.py` — the original read-only access probe, retained as a manual smoke test.
 - `work/inspect_swim.py` — a diagnostic script for inspecting swimming response fields without dumping tokens.
@@ -41,6 +42,12 @@ The Go service provides:
 
 See [`docs/go-api.md`](docs/go-api.md) for configuration and deployment and [`docs/openapi.yaml`](docs/openapi.yaml) for the public contract.
 
+## Web dashboard
+
+The browser client uses only same-origin `/v1` requests with the API-managed HttpOnly session cookie. It includes passwordless login, a responsive activity list with persisted UI filtering and cursor pagination, Garmin connect/reconnect with in-memory MFA state, manual sync polling, and server-side logout.
+
+See [`web/README.md`](web/README.md) for development, tests, browser-storage boundaries, production builds, and the current theme-source limitation.
+
 ## Quick test
 
 ```bash
@@ -49,6 +56,10 @@ uv pip install --python .venv/bin/python -e 'importer[test]'
 .venv/bin/python -m pytest importer/tests
 cd api
 go test ./...
+cd ../web
+npm ci
+npm run check
+npm run test:e2e
 ```
 
 Unit tests are offline and use synthetic payloads. PostgreSQL integration suites run when their documented test database environment variables are set.

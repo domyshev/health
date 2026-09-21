@@ -1,0 +1,51 @@
+{
+  "name": "health-hub-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "generate:api": "openapi-typescript ../docs/openapi.yaml -o src/api/schema.d.ts",
+    "check:api": "openapi-typescript ../docs/openapi.yaml -o .schema.generated.d.ts && cmp -s .schema.generated.d.ts src/api/schema.d.ts; code=$?; rm -f .schema.generated.d.ts; exit $code",
+    "check": "npm run check:api && npm run lint && npm run test && npm run build"
+  },
+  "dependencies": {
+    "@emotion/react": "11.14.0",
+    "@emotion/styled": "11.14.1",
+    "@mui/icons-material": "9.4.0",
+    "@mui/material": "9.4.0",
+    "@reduxjs/toolkit": "2.12.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-redux": "9.3.0",
+    "react-router-dom": "7.18.4",
+    "redux-persist": "6.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.63.0",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.7",
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "eslint": "9.39.5",
+    "eslint-plugin-react-hooks": "7.0.1",
+    "eslint-plugin-react-refresh": "0.5.7",
+    "globals": "16.5.0",
+    "jsdom": "27.0.1",
+    "openapi-typescript": "7.13.0",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.70.0",
+    "vite": "8.3.0",
+    "vitest": "4.1.11"
+  }
+}
