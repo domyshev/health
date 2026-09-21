@@ -1,0 +1,12 @@
+[Unit]
+Description=Run Health Hub Garmin synchronization every 15 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+RandomizedDelaySec=2min
+Persistent=true
+Unit=health-hub-garmin-sync.service
+
+[Install]
+WantedBy=timers.target

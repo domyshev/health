@@ -1,0 +1,30 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "health-hub-garmin"
+version = "0.1.0"
+description = "Read-only Garmin Connect importer for Health Hub"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "garminconnect==0.3.16",
+  "psycopg[binary]>=3.2,<4",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.3,<9"]
+
+[project.scripts]
+health-hub-garmin = "health_hub_garmin.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/health_hub_garmin"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+ignore = ["BLE001"]

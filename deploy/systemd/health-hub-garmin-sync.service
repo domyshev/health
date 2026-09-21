@@ -1,0 +1,17 @@
+[Unit]
+Description=Health Hub Garmin synchronization
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=health-hub-importer
+Group=health-hub-importer
+EnvironmentFile=/etc/health-hub/importer.env
+ExecStart=/opt/health-hub/.venv/bin/health-hub-garmin sync --connection-id ${HEALTH_HUB_GARMIN_CONNECTION_ID} --user-id ${HEALTH_HUB_USER_ID} --token-dir /var/lib/health-hub/garmin/default --output /var/lib/health-hub/activities --limit 100 --refresh-days 7
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/health-hub/garmin /var/lib/health-hub/activities
+UMask=0077

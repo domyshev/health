@@ -1,7 +1,13 @@
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.coverage
+htmlcov/
+.env
 .secrets/
 probe-output/
 outputs/
+storage/
+/var/
 /plans/
