@@ -1,0 +1,30 @@
+[Unit]
+Description=Health Hub private Garmin control service
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=health-hub-importer
+Group=health-hub
+WorkingDirectory=/opt/health-hub
+EnvironmentFile=/etc/health-hub/importer-control.env
+ExecStart=/opt/health-hub/.venv/bin/health-hub-garmin-control
+Restart=on-failure
+RestartSec=5s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/health-hub/garmin /var/lib/health-hub/activities
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

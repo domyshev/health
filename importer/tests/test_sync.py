@@ -162,3 +162,18 @@ def test_partial_snapshot_makes_sync_partial_without_losing_it():
     assert summary.status == "partial"
     assert summary.failed_count == 1
     assert ("persist", "42", "partial") in store.events
+
+
+def test_reserved_run_id_is_reused_without_creating_second_run():
+    store = FakeStore(
+        ImportState(created=True, status="discovered", primary_payload_sha256=None)
+    )
+    service = SyncService(FakeClient(), store, FakeSnapshotImporter())
+
+    summary = service.sync(
+        connection_id="connection-1", user_id="user-1", run_id="reserved-run"
+    )
+
+    assert summary.run_id == "reserved-run"
+    assert ("start", "connection-1") not in store.events
+    assert any(event[:2] == ("finish", "reserved-run") for event in store.events)

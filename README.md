@@ -1,14 +1,15 @@
 # health-hub
 
-A self-hosted personal health, fitness, and nutrition data platform. The current implementation provides a read-only Garmin Connect importer with local raw-file packages, PostgreSQL persistence, incremental synchronization, and swimming normalization.
+A self-hosted personal health, fitness, and nutrition data platform. The current implementation provides a Go JSON API with passwordless email authentication and a read-only Garmin Connect importer with local raw-file packages, PostgreSQL persistence, incremental synchronization, and swimming normalization.
 
 ## Components
 
 - `importer/` — Python 3.12 Garmin importer. This is the only component that communicates with Garmin Connect or reads Garmin OAuth tokens.
-- `migrations/` — PostgreSQL schema for Garmin integration state, raw resources, original files, normalized activities, and swimming lengths.
+- `api/` — Go API for passwordless authentication, secure browser sessions, normalized health reads, Garmin connection state, and manual synchronization.
+- `migrations/` — PostgreSQL schema and least-privilege roles for authentication, Garmin integration state, raw resources, original files, and normalized health data.
 - `garmin_probe.py` — the original read-only access probe, retained as a manual smoke test.
 - `work/inspect_swim.py` — a diagnostic script for inspecting swimming response fields without dumping tokens.
-- `api/` — reserved for the Go API defined by the next implementation plan.
+
 
 ## Garmin importer
 
@@ -25,15 +26,32 @@ The importer uses `garminconnect==0.3.16` and only calls read operations. It can
 
 See [`docs/garmin-importer.md`](docs/garmin-importer.md) for installation and operation.
 
+## Go API
+
+The Go service provides:
+
+- six-digit passwordless login codes delivered through Resend;
+- hashed login codes and opaque 30-day sessions;
+- Secure, HttpOnly, SameSite browser cookies and Origin-based CSRF protection;
+- trusted-proxy-aware IP rate limiting;
+- owner-scoped activity, swimming, and daily-health endpoints;
+- a safe Garmin connection and MFA facade over the private Python control service;
+- idempotent manual sync dispatch and sync status;
+- OpenAPI documentation and liveness/readiness endpoints.
+
+See [`docs/go-api.md`](docs/go-api.md) for configuration and deployment and [`docs/openapi.yaml`](docs/openapi.yaml) for the public contract.
+
 ## Quick test
 
 ```bash
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python -e 'importer[test]'
 .venv/bin/python -m pytest importer/tests
+cd api
+go test ./...
 ```
 
-All automated tests are offline and use synthetic payloads.
+Unit tests are offline and use synthetic payloads. PostgreSQL integration suites run when their documented test database environment variables are set.
 
 ## Legacy probe
 
@@ -48,6 +66,6 @@ It reuses tokens under `.secrets/garmin/` and never modifies the Garmin account.
 ## Security
 
 - Never commit or publish `.secrets`, Garmin tokens, raw health payloads, FIT files, database dumps, or precise location data.
-- Garmin passwords and MFA codes are accepted only through interactive prompts and are not stored.
-- The future Go API must not access Garmin tokens or call Garmin Connect.
+- Garmin passwords and MFA codes are accepted only by the private importer control process and are not stored.
+- The Go API cannot access Garmin tokens or call Garmin Connect.
 - Raw Garmin responses are internal audit and reprocessing data, not a public API contract.

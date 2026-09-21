@@ -1,0 +1,377 @@
+openapi: 3.1.0
+info:
+  title: Health Hub API
+  version: 1.0.0
+  description: Stable API for passwordless authentication and normalized health data.
+servers:
+  - url: https://health.example
+security:
+  - sessionCookie: []
+paths:
+  /health/live:
+    get:
+      security: []
+      operationId: live
+      responses:
+        "200": {description: Process is live, content: {application/json: {schema: {$ref: "#/components/schemas/Status"}}}}
+  /health/ready:
+    get:
+      security: []
+      operationId: ready
+      responses:
+        "200": {description: Dependencies are ready, content: {application/json: {schema: {$ref: "#/components/schemas/Status"}}}}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+  /v1/auth/request-code:
+    post:
+      security: []
+      operationId: requestLoginCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/RequestCodeRequest"}
+      responses:
+        "202": {description: Request accepted, content: {application/json: {schema: {$ref: "#/components/schemas/Status"}}}}
+        "400": {$ref: "#/components/responses/InvalidRequest"}
+        "429": {$ref: "#/components/responses/RateLimited"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+  /v1/auth/verify-code:
+    post:
+      security: []
+      operationId: verifyLoginCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/VerifyCodeRequest"}
+      responses:
+        "200":
+          description: Authenticated; sets the session cookie.
+          headers:
+            Set-Cookie:
+              schema: {type: string}
+              description: Secure HttpOnly SameSite=Lax __Host-health_hub_session cookie.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/User"}
+        "401": {$ref: "#/components/responses/InvalidCode"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+  /v1/auth/logout:
+    post:
+      operationId: logout
+      responses:
+        "204": {description: Session revoked and cookie expired}
+        "401": {$ref: "#/components/responses/Unauthenticated"}
+        "403": {$ref: "#/components/responses/InvalidOrigin"}
+  /v1/me:
+    get:
+      operationId: currentUser
+      responses:
+        "200": {description: Current user, content: {application/json: {schema: {$ref: "#/components/schemas/User"}}}}
+        "401": {$ref: "#/components/responses/Unauthenticated"}
+  /v1/activities:
+    get:
+      operationId: listActivities
+      parameters:
+        - {name: type, in: query, schema: {type: string, enum: [running, cycling, walking, swimming, strength, other]}}
+        - {name: cursor, in: query, schema: {type: string}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
+      responses:
+        "200": {description: Activity page, content: {application/json: {schema: {$ref: "#/components/schemas/ActivityPage"}}}}
+        "401": {$ref: "#/components/responses/Unauthenticated"}
+  /v1/activities/{activityId}:
+    get:
+      operationId: getActivity
+      parameters:
+        - {$ref: "#/components/parameters/ActivityId"}
+      responses:
+        "200": {description: Activity, content: {application/json: {schema: {$ref: "#/components/schemas/Activity"}}}}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /v1/activities/{activityId}/laps:
+    get:
+      operationId: listSwimLaps
+      parameters:
+        - {$ref: "#/components/parameters/ActivityId"}
+      responses:
+        "200": {description: Swim laps, content: {application/json: {schema: {$ref: "#/components/schemas/SwimLapList"}}}}
+        "401": {$ref: "#/components/responses/Unauthenticated"}
+  /v1/activities/{activityId}/swim-lengths:
+    get:
+      operationId: listSwimLengths
+      parameters:
+        - {$ref: "#/components/parameters/ActivityId"}
+      responses:
+        "200": {description: Swim lengths, content: {application/json: {schema: {$ref: "#/components/schemas/SwimLengthList"}}}}
+        "401": {$ref: "#/components/responses/Unauthenticated"}
+  /v1/daily-health:
+    get:
+      operationId: listDailyHealth
+      parameters:
+        - {name: from, in: query, required: true, schema: {type: string, format: date}}
+        - {name: to, in: query, required: true, schema: {type: string, format: date}}
+      responses:
+        "200": {description: Daily health range, content: {application/json: {schema: {$ref: "#/components/schemas/DailyHealthList"}}}}
+        "400": {$ref: "#/components/responses/InvalidRequest"}
+  /v1/daily-health/{date}:
+    get:
+      operationId: getDailyHealth
+      parameters:
+        - {name: date, in: path, required: true, schema: {type: string, format: date}}
+      responses:
+        "200": {description: Daily health, content: {application/json: {schema: {$ref: "#/components/schemas/DailyHealth"}}}}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /v1/sync-runs:
+    post:
+      operationId: startSync
+      responses:
+        "202": {description: Sync accepted, content: {application/json: {schema: {$ref: "#/components/schemas/SyncStart"}}}}
+        "403": {$ref: "#/components/responses/InvalidOrigin"}
+        "409": {$ref: "#/components/responses/Conflict"}
+  /v1/sync-runs/{syncRunId}:
+    get:
+      operationId: getSyncRun
+      parameters:
+        - {name: syncRunId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        "200": {description: Sync run, content: {application/json: {schema: {$ref: "#/components/schemas/SyncRun"}}}}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /v1/integrations/garmin:
+    get:
+      operationId: getGarminConnection
+      responses:
+        "200": {description: Safe Garmin connection state, content: {application/json: {schema: {$ref: "#/components/schemas/GarminConnection"}}}}
+  /v1/integrations/garmin/connect:
+    post:
+      operationId: connectGarmin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/GarminConnectRequest"}
+      responses:
+        "200": {description: Connected, content: {application/json: {schema: {$ref: "#/components/schemas/GarminConnectResult"}}}}
+        "202": {description: MFA required, content: {application/json: {schema: {$ref: "#/components/schemas/GarminConnectResult"}}}}
+        "403": {$ref: "#/components/responses/InvalidOrigin"}
+  /v1/integrations/garmin/challenges/{challengeId}/verify:
+    post:
+      operationId: verifyGarminChallenge
+      parameters:
+        - {name: challengeId, in: path, required: true, schema: {type: string}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/GarminMFARequest"}
+      responses:
+        "200": {description: Connected, content: {application/json: {schema: {$ref: "#/components/schemas/GarminConnectResult"}}}}
+        "401": {$ref: "#/components/responses/InvalidChallenge"}
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-health_hub_session
+  parameters:
+    ActivityId:
+      name: activityId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+  responses:
+    InvalidRequest: {description: Invalid request, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
+    InvalidCode: {description: Invalid or expired login code, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
+    InvalidChallenge: {description: Invalid or expired challenge, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
+    InvalidOrigin: {description: Origin is not allowed, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
+    Unauthenticated: {description: Authentication required, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
+    RateLimited: {description: Rate limit exceeded, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
+    NotFound: {description: Resource not found, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
+    Conflict: {description: Operation conflicts with current state, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
+    ServiceUnavailable: {description: Service unavailable, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
+  schemas:
+    Status:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties: {status: {type: string}}
+    RequestCodeRequest:
+      type: object
+      additionalProperties: false
+      required: [email]
+      properties: {email: {type: string, format: email}}
+    VerifyCodeRequest:
+      type: object
+      additionalProperties: false
+      required: [email, code]
+      properties:
+        email: {type: string, format: email}
+        code: {type: string, pattern: "^[0-9]{6}$"}
+    User:
+      type: object
+      additionalProperties: false
+      required: [id, email, displayName, role]
+      properties:
+        id: {type: string, format: uuid}
+        email: {type: string, format: email}
+        displayName: {type: string}
+        role: {type: string, enum: [user, admin]}
+    Activity:
+      type: object
+      additionalProperties: false
+      required: [id, type]
+      properties:
+        id: {type: string, format: uuid}
+        type: {type: string, enum: [running, cycling, walking, swimming, strength, other]}
+        sourceType: {type: string}
+        name: {type: string}
+        startedAt: {type: string, format: date-time}
+        timezone: {type: string}
+        distanceM: {type: number}
+        durationS: {type: number}
+        movingDurationS: {type: number}
+        elapsedDurationS: {type: number}
+        caloriesKcal: {type: number}
+        averageHrBpm: {type: number}
+        maxHrBpm: {type: number}
+        swimEnvironment: {type: string, enum: [pool, open_water]}
+        poolLengthM: {type: number}
+        averagePacePer100mS: {type: number}
+        activeLengths: {type: integer}
+        lapCount: {type: integer}
+        totalStrokes: {type: integer}
+        averageStrokesPerLength: {type: number}
+        averageSwolf: {type: number}
+    ActivityPage:
+      type: object
+      additionalProperties: false
+      required: [items, nextCursor]
+      properties:
+        items: {type: array, items: {$ref: "#/components/schemas/Activity"}}
+        nextCursor: {type: string}
+    SwimLength:
+      type: object
+      additionalProperties: false
+      required: [id, lapIndex, lengthIndex, isRest]
+      properties:
+        id: {type: string, format: uuid}
+        lapIndex: {type: integer}
+        lengthIndex: {type: integer}
+        startedAt: {type: string, format: date-time}
+        distanceM: {type: number}
+        durationS: {type: number}
+        averageSpeedMps: {type: number}
+        pacePer100mS: {type: number}
+        strokeType: {type: string}
+        caloriesKcal: {type: number}
+        averageHrBpm: {type: number}
+        maxHrBpm: {type: number}
+        strokeCount: {type: integer}
+        swolf: {type: number}
+        isRest: {type: boolean}
+    SwimLap:
+      type: object
+      additionalProperties: false
+      required: [lapIndex, lengthCount, isRest]
+      properties:
+        lapIndex: {type: integer}
+        lengthCount: {type: integer}
+        distanceM: {type: number}
+        durationS: {type: number}
+        isRest: {type: boolean}
+    SwimLengthList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/SwimLength"}}}
+    SwimLapList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/SwimLap"}}}
+    DailyHealth:
+      type: object
+      additionalProperties: false
+      required: [date]
+      properties:
+        date: {type: string, format: date}
+        steps: {type: integer}
+        caloriesKcal: {type: number}
+        distanceM: {type: number}
+        restingHrBpm: {type: number}
+        maxHrBpm: {type: number}
+        sleepSeconds: {type: integer}
+        sleepScore: {type: number}
+        bodyBatteryHigh: {type: integer}
+        bodyBatteryLow: {type: integer}
+        stressAverage: {type: number}
+    DailyHealthList:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties: {items: {type: array, items: {$ref: "#/components/schemas/DailyHealth"}}}
+    GarminConnection:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        id: {type: string, format: uuid}
+        status: {type: string}
+        garminEmail: {type: string, format: email}
+        lastSuccessfulSyncAt: {type: string, format: date-time}
+        lastSyncStatus: {type: string}
+        lastErrorCode: {type: string}
+        activeSyncRunId: {type: string, format: uuid}
+    GarminConnectRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email: {type: string, format: email}
+        password: {type: string, minLength: 1, writeOnly: true}
+    GarminMFARequest:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties: {code: {type: string, minLength: 1, writeOnly: true}}
+    GarminConnectResult:
+      type: object
+      additionalProperties: false
+      required: [status]
+      properties:
+        status: {type: string, enum: [connected, mfa_required]}
+        connectionId: {type: string, format: uuid}
+        challengeId: {type: string}
+        expiresAt: {type: string, format: date-time}
+    SyncStart:
+      type: object
+      additionalProperties: false
+      required: [syncRunId, status]
+      properties:
+        syncRunId: {type: string, format: uuid}
+        status: {type: string}
+    SyncRun:
+      type: object
+      additionalProperties: false
+      required: [id, status, startedAt, discoveredCount, importedCount, updatedCount, failedCount]
+      properties:
+        id: {type: string, format: uuid}
+        status: {type: string}
+        startedAt: {type: string, format: date-time}
+        finishedAt: {type: string, format: date-time}
+        discoveredCount: {type: integer}
+        importedCount: {type: integer}
+        updatedCount: {type: integer}
+        failedCount: {type: integer}
+        errorSummary: {type: string}
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, requestId]
+          properties:
+            code: {type: string}
+            message: {type: string}
+            requestId: {type: string}

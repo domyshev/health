@@ -18,6 +18,33 @@ pytestmark = pytest.mark.skipif(
 )
 
 
+def test_private_control_connection_and_sync_reservation(tmp_path: Path):
+    assert DATABASE_URL is not None
+    store = PostgresStore(DATABASE_URL)
+    migrations = Path(__file__).resolve().parents[3] / "migrations"
+    store.migrate(migrations / "001_garmin_import.sql")
+    store.migrate(migrations / "002_go_api_auth.sql")
+    user_id = str(uuid.uuid4())
+    connection_id = store.ensure_connection(
+        user_id,
+        str(tmp_path / "tokens"),
+        "garmin@example.com",
+    )
+
+    run_id = store.reserve_sync_run(user_id, connection_id)
+
+    assert uuid.UUID(run_id)
+    assert scalar(
+        DATABASE_URL,
+        "SELECT garmin_email::text FROM garmin_connections WHERE id = %s",
+        (connection_id,),
+    ) == "garmin@example.com"
+    with pytest.raises(SyncAlreadyRunningError):
+        store.reserve_sync_run(user_id, connection_id)
+    with pytest.raises(ValueError):
+        store.reserve_sync_run(str(uuid.uuid4()), connection_id)
+
+
 class SwimClient:
     activity: ClassVar[dict] = {
         "activityId": 42,

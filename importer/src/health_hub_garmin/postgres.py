@@ -54,20 +54,64 @@ class PostgresStore:
                 (migration_name,),
             )
 
-    def ensure_connection(self, user_id: str, token_storage_key: str) -> str:
+    def ensure_connection(
+        self,
+        user_id: str,
+        token_storage_key: str,
+        garmin_email: str | None = None,
+    ) -> str:
         with self._connect() as connection:
-            row = connection.execute(
-                """
-                INSERT INTO garmin_connections (user_id, token_storage_key)
-                VALUES (%s, %s)
-                ON CONFLICT (user_id) DO UPDATE SET
-                    token_storage_key = EXCLUDED.token_storage_key,
-                    status = 'active',
-                    updated_at = now()
-                RETURNING id
-                """,
-                (user_id, token_storage_key),
-            ).fetchone()
+            if garmin_email is None:
+                row = connection.execute(
+                    """
+                    INSERT INTO garmin_connections (user_id, token_storage_key)
+                    VALUES (%s, %s)
+                    ON CONFLICT (user_id) DO UPDATE SET
+                        token_storage_key = EXCLUDED.token_storage_key,
+                        status = 'active',
+                        updated_at = now()
+                    RETURNING id
+                    """,
+                    (user_id, token_storage_key),
+                ).fetchone()
+            else:
+                row = connection.execute(
+                    """
+                    INSERT INTO garmin_connections (user_id, token_storage_key, garmin_email)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (user_id) DO UPDATE SET
+                        token_storage_key = EXCLUDED.token_storage_key,
+                        garmin_email = EXCLUDED.garmin_email,
+                        status = 'active',
+                        last_error_code = NULL,
+                        updated_at = now()
+                    RETURNING id
+                    """,
+                    (user_id, token_storage_key, garmin_email),
+                ).fetchone()
+        return str(row["id"] if isinstance(row, dict) else row[0])
+
+    def reserve_sync_run(self, user_id: str, connection_id: str) -> str:
+        with self._connect() as connection:
+            try:
+                row = connection.execute(
+                    """
+                    INSERT INTO garmin_sync_runs (connection_id, status)
+                    SELECT id, 'running'
+                    FROM garmin_connections
+                    WHERE id = %s AND user_id = %s
+                    RETURNING id
+                    """,
+                    (connection_id, user_id),
+                ).fetchone()
+            except Exception as exc:
+                if getattr(exc, "sqlstate", None) == "23505":
+                    raise SyncAlreadyRunningError(
+                        f"sync already running for connection {connection_id}"
+                    ) from exc
+                raise
+        if row is None:
+            raise ValueError("Garmin connection not found")
         return str(row["id"] if isinstance(row, dict) else row[0])
 
     @contextmanager

@@ -14,10 +14,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8.3,<9"]
+test = [
+  "mypy>=1.11,<2",
+  "pytest>=8.3,<9",
+  "ruff>=0.8,<1",
+]
 
 [project.scripts]
 health-hub-garmin = "health_hub_garmin.cli:main"
+health-hub-garmin-control = "health_hub_garmin.control_cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/health_hub_garmin"]

@@ -99,6 +99,7 @@ class SyncService:
         *,
         connection_id: str,
         user_id: str,
+        run_id: str | None = None,
         limit: int = 100,
         refresh_days: int = 7,
     ) -> SyncSummary:
@@ -108,7 +109,7 @@ class SyncService:
             raise ValueError("refresh_days must not be negative")
 
         with self.store.sync_lock(connection_id):
-            run_id = self.store.start_sync_run(connection_id)
+            run_id = run_id or self.store.start_sync_run(connection_id)
             discovered = imported = updated = failed = 0
             errors: list[str] = []
             try:
