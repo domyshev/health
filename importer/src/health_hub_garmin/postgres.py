@@ -91,18 +91,18 @@ class PostgresStore:
                 ).fetchone()
         return str(row["id"] if isinstance(row, dict) else row[0])
 
-    def reserve_sync_run(self, user_id: str, connection_id: str) -> str:
+    def reserve_sync_run(self, user_id: str, connection_id: str, mode: str) -> str:
         with self._connect() as connection:
             try:
                 row = connection.execute(
                     """
-                    INSERT INTO garmin_sync_runs (connection_id, status)
-                    SELECT id, 'running'
+                    INSERT INTO garmin_sync_runs (connection_id, status, mode)
+                    SELECT id, 'running', %s
                     FROM garmin_connections
                     WHERE id = %s AND user_id = %s
                     RETURNING id
                     """,
-                    (connection_id, user_id),
+                    (mode, connection_id, user_id),
                 ).fetchone()
             except Exception as exc:
                 if getattr(exc, "sqlstate", None) == "23505":

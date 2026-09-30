@@ -18,6 +18,8 @@ import {
 import {
   useConnectGarminMutation,
   useGetGarminConnectionQuery,
+  useGetSyncRunQuery,
+  useStartSyncMutation,
   useVerifyGarminMfaMutation,
 } from '../../api/healthApi'
 
@@ -32,6 +34,9 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
   const [password, setPassword] = useState('')
   const [mfaCode, setMfaCode] = useState('')
   const [challenge, setChallenge] = useState<{ id: string; expiresAt?: string }>()
+  const [showCredentialsForm, setShowCredentialsForm] = useState(false)
+  const [connectionComplete, setConnectionComplete] = useState(false)
+  const [fullHistoryRunId, setFullHistoryRunId] = useState<string>()
   const {
     data: connection,
     isError: connectionError,
@@ -40,6 +45,11 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
   } = useGetGarminConnectionQuery(undefined, { skip: !open })
   const [connectGarmin, connectState] = useConnectGarminMutation()
   const [verifyMfa, verifyState] = useVerifyGarminMfaMutation()
+  const [startSync, syncState] = useStartSyncMutation()
+  const { data: fullHistoryRun } = useGetSyncRunQuery(fullHistoryRunId ?? '', {
+    skip: !fullHistoryRunId,
+    pollingInterval: fullHistoryRunId ? 10_000 : 0,
+  })
 
   useEffect(() => {
     if (!open) return
@@ -51,6 +61,8 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
     setPassword('')
     setMfaCode('')
     setChallenge(undefined)
+    setShowCredentialsForm(false)
+    setConnectionComplete(false)
     onClose()
   }
 
@@ -63,6 +75,8 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
         setChallenge({ id: result.challengeId, expiresAt: result.expiresAt })
       } else {
         setChallenge(undefined)
+        setConnectionComplete(true)
+        setShowCredentialsForm(false)
       }
     } catch {
       setPassword('')
@@ -76,12 +90,31 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
       await verifyMfa({ challengeId: challenge.id, code: mfaCode }).unwrap()
       setMfaCode('')
       setChallenge(undefined)
+      setConnectionComplete(true)
+      setShowCredentialsForm(false)
     } catch {
       setMfaCode('')
     }
   }
 
-  const connected = connection?.status === 'connected'
+  async function startInitialSync(mode: 'recent' | 'full_history') {
+    try {
+      const result = await startSync({ mode }).unwrap()
+      setFullHistoryRunId(result.syncRunId)
+      setConnectionComplete(false)
+      void refetch()
+    } catch {
+      // Mutation state provides the user-facing error.
+    }
+  }
+
+  async function importFullHistory() {
+    await startInitialSync('full_history')
+  }
+
+  const connected = connection?.status === 'connected' || connection?.status === 'active'
+  const displayConnected = connected || connectionComplete
+  const reconnectRequired = connection?.status === 'reconnect_required' || connection?.status === 'reauth_required'
 
   return (
     <Drawer
@@ -107,8 +140,8 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
           </Alert>
         )}
         {isLoading ? <CircularProgress aria-label="Loading Garmin status" /> : !connectionError && (
-          <Alert icon={<LinkRounded />} severity={connected ? 'success' : connection?.status === 'reconnect_required' ? 'warning' : 'info'}>
-            <strong>{connected ? 'Connected' : connection?.status === 'reconnect_required' ? 'Reconnect required' : 'Not connected'}</strong>
+          <Alert icon={<LinkRounded />} severity={displayConnected ? 'success' : reconnectRequired ? 'warning' : 'info'}>
+            <strong>{displayConnected ? 'Connected' : reconnectRequired ? 'Reconnect required' : 'Not connected'}</strong>
             {connection?.garminEmail && <div>{connection.garminEmail}</div>}
             {connection?.lastSuccessfulSyncAt && (
               <div title={connection.lastSuccessfulSyncAt}>Last sync {new Date(connection.lastSuccessfulSyncAt).toLocaleString()}</div>
@@ -146,10 +179,56 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
               <Button onClick={() => { setChallenge(undefined); setMfaCode('') }}>Start over</Button>
             </Stack>
           </Box>
+        ) : connectionComplete ? (
+          <Stack spacing={2}>
+            <Alert severity="success">Garmin authorization completed successfully.</Alert>
+            <Typography sx={{ fontWeight: 700 }}>How would you like to sync your data?</Typography>
+            <Typography color="text.secondary" variant="body2">
+              Quick sync imports your 100 most recent Garmin activities. Full history imports every activity Garmin makes available and can take a while.
+            </Typography>
+            {syncState.isError && <Alert severity="error">Synchronization could not be started. Try again.</Alert>}
+            <Button disabled={syncState.isLoading} onClick={() => void startInitialSync('full_history')} variant="contained">
+              {syncState.isLoading ? <CircularProgress size={22} /> : 'Import full history'}
+            </Button>
+            <Button disabled={syncState.isLoading} onClick={() => void startInitialSync('recent')} variant="outlined">Quick sync</Button>
+            <Typography color="text.secondary" variant="caption">
+              You can start a full import later in Garmin settings, under Full Garmin history.
+            </Typography>
+          </Stack>
+        ) : displayConnected && !showCredentialsForm ? (
+          <Stack spacing={2}>
+            <Alert severity="success">
+              Garmin authorization completed successfully. You can now start synchronization.
+            </Alert>
+            <Button
+              onClick={() => {
+                setEmail(connection?.garminEmail ?? email)
+                setShowCredentialsForm(true)
+              }}
+              variant="outlined"
+            >
+              Refresh access
+            </Button>
+            <Divider />
+            <Box>
+              <Typography sx={{ fontWeight: 700 }}>Full Garmin history</Typography>
+              <Typography color="text.secondary" sx={{ mt: 0.5 }} variant="body2">
+                Import every activity available from Garmin. This can take a while; ordinary Sync only checks recent activity.
+              </Typography>
+              {fullHistoryRun?.status === 'running' && <Alert icon={<CircularProgress size={20} />} severity="info" sx={{ mt: 1.5 }}>Importing history: {fullHistoryRun.discoveredCount} discovered, {fullHistoryRun.importedCount + fullHistoryRun.updatedCount} saved so far.</Alert>}
+              {fullHistoryRun?.status === 'complete' && <Alert severity="success" sx={{ mt: 1.5 }}>Full history import complete: {fullHistoryRun.importedCount} new and {fullHistoryRun.updatedCount} updated activities.</Alert>}
+              {fullHistoryRun?.status === 'partial' || fullHistoryRun?.status === 'failed' ? <Alert severity="error" sx={{ mt: 1.5 }}>Full history import did not complete. Refresh Garmin access and try again.</Alert> : null}
+              {syncState.isError && <Alert severity="error" sx={{ mt: 1.5 }}>Full history import could not be started. Try again.</Alert>}
+              {syncState.isSuccess && !fullHistoryRun && <Alert severity="success" sx={{ mt: 1.5 }}>Full history import was accepted; preparing progress…</Alert>}
+              <Button disabled={syncState.isLoading || fullHistoryRun?.status === 'running'} onClick={() => void importFullHistory()} sx={{ mt: 1.5 }} variant="contained">
+                {syncState.isLoading || fullHistoryRun?.status === 'running' ? <CircularProgress size={22} /> : 'Import full history'}
+              </Button>
+            </Box>
+          </Stack>
         ) : (
           <Box component="form" onSubmit={(event) => void connect(event)}>
             <Stack spacing={2}>
-              <Typography sx={{ fontWeight: 700 }}>{connected ? 'Refresh access' : 'Connect Garmin'}</Typography>
+              <Typography sx={{ fontWeight: 700 }}>{displayConnected ? 'Refresh access' : 'Connect Garmin'}</Typography>
               <Typography color="text.secondary" variant="body2">
                 Credentials are sent once to the Health Hub API and are never saved by this web app.
               </Typography>
@@ -173,7 +252,7 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
                 value={password}
               />
               <Button disabled={!email || !password} type="submit" variant="contained">
-                {connectState.isLoading ? <CircularProgress size={22} /> : connected ? 'Refresh access' : 'Connect Garmin'}
+                {connectState.isLoading ? <CircularProgress size={22} /> : displayConnected ? 'Refresh access' : 'Connect Garmin'}
               </Button>
             </Stack>
           </Box>

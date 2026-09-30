@@ -25,7 +25,7 @@ class FakeControl:
     def verify_mfa(self, user_id: str, challenge_id: str, code: str):
         return {"status": "connected", "connectionId": "connection-id"}
 
-    def start_sync(self, user_id: str, connection_id: str):
+    def start_sync(self, user_id: str, connection_id: str, mode: str = "recent"):
         return {"syncRunId": "run-id", "status": "running"}
 
 
@@ -84,7 +84,7 @@ def test_private_sync_returns_accepted_run() -> None:
     with running_server(FakeControl()) as base_url:
         response = post(
             base_url + "/private/v1/sync-runs",
-            {"userId": "user-id", "connectionId": "connection-id"},
+            {"userId": "user-id", "connectionId": "connection-id", "mode": "recent"},
         )
         assert response.status == 202
         assert json.load(response) == {"syncRunId": "run-id", "status": "running"}

@@ -34,14 +34,14 @@ class FakeStore:
     def __init__(self) -> None:
         self.connections: list[tuple[str, str, str]] = []
         self.sync_error: Exception | None = None
-        self.reservations: list[tuple[str, str]] = []
+        self.reservations: list[tuple[str, str, str]] = []
 
     def ensure_connection(self, user_id: str, token_storage_key: str, garmin_email: str) -> str:
         self.connections.append((user_id, token_storage_key, garmin_email))
         return "connection-id"
 
-    def reserve_sync_run(self, user_id: str, connection_id: str) -> str:
-        self.reservations.append((user_id, connection_id))
+    def reserve_sync_run(self, user_id: str, connection_id: str, mode: str) -> str:
+        self.reservations.append((user_id, connection_id, mode))
         if self.sync_error:
             raise self.sync_error
         return "run-id"
@@ -49,10 +49,10 @@ class FakeStore:
 
 class FakeRunner:
     def __init__(self) -> None:
-        self.calls: list[tuple[str, str, str]] = []
+        self.calls: list[tuple[str, str, str, str]] = []
 
-    def __call__(self, user_id: str, connection_id: str, run_id: str) -> None:
-        self.calls.append((user_id, connection_id, run_id))
+    def __call__(self, user_id: str, connection_id: str, run_id: str, mode: str) -> None:
+        self.calls.append((user_id, connection_id, run_id, mode))
 
 
 def test_connect_persists_tokens_without_retaining_password(tmp_path: Path) -> None:
@@ -138,8 +138,8 @@ def test_start_sync_reserves_run_before_dispatch(tmp_path: Path) -> None:
     result = service.start_sync("user-id", "connection-id")
 
     assert result == {"syncRunId": "run-id", "status": "running"}
-    assert store.reservations == [("user-id", "connection-id")]
-    assert runner.calls == [("user-id", "connection-id", "run-id")]
+    assert store.reservations == [("user-id", "connection-id", "recent")]
+    assert runner.calls == [("user-id", "connection-id", "run-id", "recent")]
 
 
 def test_start_sync_preserves_duplicate_run_error(tmp_path: Path) -> None:

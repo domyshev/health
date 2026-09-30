@@ -42,12 +42,13 @@ func main() {
 		sender = emailadapter.NewDevelopmentSender(logger)
 	}
 	authService := auth.NewService(auth.ServiceConfig{
-		Repository:      store,
-		Sender:          sender,
-		Secret:          cfg.AuthSecret,
-		AllowedEmails:   cfg.AllowedEmails,
-		CodeLifetime:    cfg.CodeLifetime,
-		SessionLifetime: cfg.SessionLifetime,
+		Repository:           store,
+		Sender:               sender,
+		Secret:               cfg.AuthSecret,
+		AllowedEmails:        cfg.AllowedEmails,
+		CodeLifetime:         cfg.CodeLifetime,
+		SessionLifetime:      cfg.SessionLifetime,
+		DevelopmentLoginCode: cfg.DevelopmentLoginCode,
 	})
 
 	var importerClient importer.Client

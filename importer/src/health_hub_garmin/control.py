@@ -22,7 +22,7 @@ class ControlStore(Protocol):
         self, user_id: str, token_storage_key: str, garmin_email: str
     ) -> str: ...
 
-    def reserve_sync_run(self, user_id: str, connection_id: str) -> str: ...
+    def reserve_sync_run(self, user_id: str, connection_id: str, mode: str) -> str: ...
 
 
 class OAuthClient(Protocol):
@@ -49,7 +49,7 @@ class ControlService:
         store: ControlStore,
         token_root: Path,
         client_factory: Callable[[str, str], OAuthClient],
-        sync_runner: Callable[[str, str, str], None],
+        sync_runner: Callable[[str, str, str, str], None],
         challenge_ttl: timedelta = timedelta(minutes=5),
         now: Callable[[], datetime] | None = None,
         dispatch: Callable[[Callable[[], None]], None] | None = None,
@@ -116,9 +116,11 @@ class ControlService:
             user_id, challenge.email, token_dir, challenge.client
         )
 
-    def start_sync(self, user_id: str, connection_id: str) -> dict[str, str]:
-        run_id = self.store.reserve_sync_run(user_id, connection_id)
-        self.dispatch(lambda: self.sync_runner(user_id, connection_id, run_id))
+    def start_sync(self, user_id: str, connection_id: str, mode: str = "recent") -> dict[str, str]:
+        if mode not in {"recent", "full_history"}:
+            raise ValueError("invalid sync mode")
+        run_id = self.store.reserve_sync_run(user_id, connection_id, mode)
+        self.dispatch(lambda: self.sync_runner(user_id, connection_id, run_id, mode))
         return {"syncRunId": run_id, "status": "running"}
 
     def _persist_connection(

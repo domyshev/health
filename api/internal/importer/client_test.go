@@ -48,7 +48,7 @@ func TestHTTPClientMapsStablePrivateErrorCodes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.StartSync(context.Background(), "user-id", "connection-id")
+	_, err = client.StartSync(context.Background(), "user-id", "connection-id", "full_history")
 	if err != ErrSyncAlreadyRunning {
 		t.Fatalf("error = %v", err)
 	}

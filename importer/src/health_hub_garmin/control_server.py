@@ -16,7 +16,7 @@ class ControlAPI(Protocol):
         self, user_id: str, challenge_id: str, code: str
     ) -> dict[str, Any]: ...
 
-    def start_sync(self, user_id: str, connection_id: str) -> dict[str, Any]: ...
+    def start_sync(self, user_id: str, connection_id: str, mode: str = "recent") -> dict[str, Any]: ...
 
 
 def create_server(
@@ -58,9 +58,9 @@ def create_server(
                     self._write_json(HTTPStatus.OK, result)
                     return
                 if self.path == "/private/v1/sync-runs":
-                    self._require_fields(payload, "userId", "connectionId")
+                    self._require_fields(payload, "userId", "connectionId", "mode")
                     result = control.start_sync(
-                        payload["userId"], payload["connectionId"]
+                        payload["userId"], payload["connectionId"], payload["mode"]
                     )
                     self._write_json(HTTPStatus.ACCEPTED, result)
                     return

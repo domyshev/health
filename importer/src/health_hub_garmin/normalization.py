@@ -59,7 +59,7 @@ def _iso_datetime(value: Any, *, assume_utc: bool = False) -> str | None:
 
 
 def _activity_type(activity: dict[str, Any]) -> str | None:
-    value = activity.get("activityType")
+    value = activity.get("activityType") or activity.get("activityTypeDTO")
     if isinstance(value, dict):
         type_key = value.get("typeKey")
         return str(type_key) if type_key is not None else None
@@ -69,8 +69,12 @@ def _activity_type(activity: dict[str, Any]) -> str | None:
 def normalize_activity(
     activity: dict[str, Any], details: dict[str, Any]
 ) -> dict[str, Any]:
-    summary = _as_dict(details.get("summaryDTO"))
-    metadata = _as_dict(details.get("metadataDTO"))
+    summary = _as_dict(details.get("summaryDTO")) or _as_dict(
+        activity.get("summaryDTO")
+    )
+    metadata = _as_dict(details.get("metadataDTO")) or _as_dict(
+        activity.get("metadataDTO")
+    )
     activity_id = _first(activity, "activityId", "activity_id")
     if activity_id is None:
         raise ValueError("activity payload has no activityId")
@@ -81,7 +85,7 @@ def normalize_activity(
     timezone = _first(activity, "timeZoneId", "timezone") or _first(
         metadata, "timeZoneId"
     )
-    timezone_unit = metadata.get("timeZoneUnitDTO")
+    timezone_unit = metadata.get("timeZoneUnitDTO") or activity.get("timeZoneUnitDTO")
     if timezone is None and isinstance(timezone_unit, dict):
         timezone = _first(timezone_unit, "unitKey", "timeZoneId")
 
@@ -110,7 +114,8 @@ def normalize_activity(
         if summary
         else _first(activity, "maxHR"),
         "source_updated_at": _iso_datetime(
-            _first(activity, "activityUpdateTimestamp", "lastUpdated", "updatedAt"),
+            _first(activity, "activityUpdateTimestamp", "lastUpdated", "updatedAt")
+            or _first(metadata, "lastUpdateDate", "uploadedDate"),
             assume_utc=True,
         ),
     }
@@ -129,8 +134,12 @@ def normalize_swimming(
     else:
         raise ValueError("activity is not a supported swimming activity")
 
-    summary = _as_dict(details.get("summaryDTO"))
-    metadata = _as_dict(details.get("metadataDTO"))
+    summary = _as_dict(details.get("summaryDTO")) or _as_dict(
+        activity.get("summaryDTO")
+    )
+    metadata = _as_dict(details.get("metadataDTO")) or _as_dict(
+        activity.get("metadataDTO")
+    )
     swim = {
         "environment": environment,
         "pool_length_m": _first(summary, "poolLength")

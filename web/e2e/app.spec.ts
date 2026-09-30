@@ -60,7 +60,7 @@ test('passwordless login opens the dashboard and logout ends the server session'
   await code.fill('123456')
   await code.press('Enter')
 
-  await expect(page.getByRole('heading', { name: 'Activities' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Activities', exact: true })).toBeVisible()
   if (!testInfo.project.name.includes('mobile')) await expect(page.getByText('Runner')).toBeVisible()
   await page.getByRole('button', { name: 'Log out' }).click()
   await expect(page.getByRole('heading', { name: /privately organized/i })).toBeVisible()
@@ -143,7 +143,7 @@ test('login and dashboard pass automated accessibility checks', async ({ page })
   await page.getByRole('button', { name: 'Send code' }).click()
   await page.getByLabel('Verification code').fill('123456')
   await page.getByRole('button', { name: 'Verify' }).click()
-  await expect(page.getByRole('heading', { name: 'Activities' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Activities', exact: true })).toBeVisible()
 
   const dashboardResults = await new AxeBuilder({ page }).analyze()
   expect(dashboardResults.violations).toEqual([])

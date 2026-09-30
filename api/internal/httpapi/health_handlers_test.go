@@ -76,7 +76,7 @@ func (f *fakeImporterClient) VerifyMFA(context.Context, string, string, string) 
 	return importer.ConnectResult{Status: "connected"}, nil
 }
 
-func (f *fakeImporterClient) StartSync(_ context.Context, userID, connectionID string) (importer.SyncResult, error) {
+func (f *fakeImporterClient) StartSync(_ context.Context, userID, connectionID, mode string) (importer.SyncResult, error) {
 	f.syncUserID, f.syncConnection = userID, connectionID
 	return importer.SyncResult{RunID: "run-id", Status: "running"}, nil
 }
@@ -116,6 +116,25 @@ func TestActivitiesUseAuthenticatedUserAndNormalizedDTO(t *testing.T) {
 	}
 }
 
+func TestGarminStatusNormalizesStoredActiveState(t *testing.T) {
+	t.Parallel()
+	repository := &fakeHealthRepository{connection: health.GarminConnection{
+		ID: "connection-id", Status: "active", GarminEmail: "garmin@example.com",
+	}}
+	handler := authenticatedServer(repository, &fakeImporterClient{})
+	request := authenticatedRequest(http.MethodGet, "/v1/integrations/garmin", nil)
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), `"status":"connected"`) || strings.Contains(response.Body.String(), `"status":"active"`) {
+		t.Fatalf("unexpected public status: %s", response.Body.String())
+	}
+}
+
 func TestGarminConnectRequiresOriginAndForwardsCredentialsOnce(t *testing.T) {
 	t.Parallel()
 	client := &fakeImporterClient{}
@@ -140,7 +159,8 @@ func TestManualSyncUsesOwnedConnection(t *testing.T) {
 	repository := &fakeHealthRepository{connection: health.GarminConnection{ID: "connection-id", Status: "active"}}
 	client := &fakeImporterClient{}
 	handler := authenticatedServer(repository, client)
-	request := authenticatedRequest(http.MethodPost, "/v1/sync-runs", strings.NewReader(""))
+	request := authenticatedRequest(http.MethodPost, "/v1/sync-runs", strings.NewReader(`{"mode":"recent"}`))
+	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("Origin", "https://health.example")
 	response := httptest.NewRecorder()
 

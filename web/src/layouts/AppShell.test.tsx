@@ -22,14 +22,14 @@ describe('protected application shell', () => {
         return json({ items: [], nextCursor: '' })
       }
       if (path.endsWith('/v1/integrations/garmin')) {
-        return json({ status: 'connected', lastSuccessfulSyncAt: '2026-09-21T12:00:00Z' })
+        return json({ status: 'active', lastSuccessfulSyncAt: '2026-09-21T12:00:00Z' })
       }
       if (path.endsWith('/v1/sync-runs') && init?.method === 'POST') return json({ syncRunId: 'run-1', status: 'queued' }, 202)
       if (path.endsWith('/v1/sync-runs/run-1')) {
         syncReads += 1
         return json({
           id: 'run-1',
-          status: syncReads > 1 ? 'succeeded' : 'running',
+          status: syncReads > 0 ? 'complete' : 'running',
           startedAt: '2026-09-21T13:00:00Z',
           finishedAt: syncReads > 1 ? '2026-09-21T13:01:00Z' : undefined,
           discoveredCount: 1,
@@ -92,6 +92,49 @@ describe('protected application shell', () => {
 
     expect(await screen.findByText(/could not be completed/i)).toBeInTheDocument()
     expect(onLoggedOut).not.toHaveBeenCalled()
+  })
+
+  it('opens an activity detail page from a card', async () => {
+    const activity = {
+      id: '11111111-1111-4111-8111-111111111111',
+      type: 'swimming',
+      sourceType: 'open_water_swimming',
+      name: 'Detailed swim',
+      startedAt: '2000-01-01T12:00:00Z',
+      distanceM: 100.0,
+      durationS: 200.0,
+      caloriesKcal: 30,
+      averageHrBpm: 120,
+      maxHrBpm: 140,
+      swimEnvironment: 'open_water',
+      averagePacePer100mS: 200.0,
+      totalStrokes: 80,
+      averageSwolf: 50,
+    }
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path.includes('/v1/activities?')) return json({ items: [activity], nextCursor: '' })
+      if (path.endsWith(`/v1/activities/${activity.id}`)) return json(activity)
+      if (path.endsWith('/v1/integrations/garmin')) return json({ status: 'connected' })
+      throw new Error(`Unexpected request: ${path}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+
+    render(
+      <AppShell
+        onLoggedOut={() => undefined}
+        user={{ id: 'user-1', displayName: 'Runner', email: 'runner@example.com', role: 'user' }}
+      />,
+      { wrapper: TestProviders },
+    )
+
+    await user.click(await screen.findByText('Detailed swim'))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Detailed swim' })).toBeInTheDocument()
+    expect(screen.getByText('100 m')).toBeInTheDocument()
+    expect(screen.getByText('120 bpm')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /back to activities/i })).toBeInTheDocument()
   })
 
   it('resumes polling an active run reported by the Garmin status endpoint', async () => {

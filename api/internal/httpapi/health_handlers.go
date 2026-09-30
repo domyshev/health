@@ -178,6 +178,12 @@ func (s *Server) handleGetGarminConnection(w http.ResponseWriter, r *http.Reques
 		s.serviceUnavailable(w, r)
 		return
 	}
+	switch connection.Status {
+	case "active":
+		connection.Status = "connected"
+	case "reauth_required":
+		connection.Status = "reconnect_required"
+	}
 	writeJSON(w, http.StatusOK, connection)
 }
 
@@ -249,6 +255,19 @@ func (s *Server) handleStartSync(w http.ResponseWriter, r *http.Request) {
 		s.serviceUnavailable(w, r)
 		return
 	}
+	var request struct {
+		Mode string `json:"mode"`
+	}
+	if !s.decodeJSON(w, r, &request) {
+		return
+	}
+	if request.Mode == "" {
+		request.Mode = "recent"
+	}
+	if request.Mode != "recent" && request.Mode != "full_history" {
+		s.writeError(w, r, http.StatusBadRequest, "invalid_request", "mode must be recent or full_history")
+		return
+	}
 	user := userFromContext(r.Context())
 	connection, err := s.health.GetGarminConnection(r.Context(), user.ID)
 	if errors.Is(err, health.ErrNotFound) {
@@ -263,7 +282,7 @@ func (s *Server) handleStartSync(w http.ResponseWriter, r *http.Request) {
 		s.writeError(w, r, http.StatusConflict, "sync_already_running", "A synchronization is already running")
 		return
 	}
-	result, err := s.importer.StartSync(r.Context(), user.ID, connection.ID)
+	result, err := s.importer.StartSync(r.Context(), user.ID, connection.ID, request.Mode)
 	if err != nil {
 		s.writeImporterError(w, r, err)
 		return

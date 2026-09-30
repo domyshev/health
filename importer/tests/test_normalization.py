@@ -102,6 +102,45 @@ def test_normalize_pool_swim_and_lengths():
     assert lengths[1]["is_rest"] is True
 
 
+def test_normalize_garmin_activity_dto_shape():
+    # Synthetic values exercise the Garmin DTO structure without personal data.
+    activity = {
+        "activityId": 43,
+        "activityName": "Example Open Water Swim",
+        "activityTypeDTO": {"typeKey": "open_water_swimming"},
+        "summaryDTO": {
+            "startTimeGMT": "2000-01-01T12:00:00.0",
+            "startTimeLocal": "2000-01-01T12:00:00.0",
+            "distance": 100.0,
+            "duration": 200.0,
+            "movingDuration": 180.0,
+            "elapsedDuration": 200.0,
+            "calories": 30.0,
+            "averageHR": 120.0,
+            "maxHR": 140.0,
+            "averageSpeed": 0.5,
+            "totalNumberOfStrokes": 80,
+            "averageSwimCadence": 30.0,
+            "averageSWOLF": 50.0,
+        },
+        "metadataDTO": {"lapCount": 1, "lastUpdateDate": "2000-01-02T12:00:00.0"},
+        "timeZoneUnitDTO": {"unitKey": "UTC"},
+    }
+
+    normalized = normalize_activity(activity, {"activityDetailMetrics": []})
+    swim, _ = normalize_swimming(activity, {"activityDetailMetrics": []}, {"lapDTOs": []})
+
+    assert normalized["activity_type"] == "open_water_swimming"
+    assert normalized["started_at"] == "2000-01-01T12:00:00Z"
+    assert normalized["timezone"] == "UTC"
+    assert normalized["distance_m"] == 100.0
+    assert normalized["duration_s"] == 200.0
+    assert normalized["calories_kcal"] == 30.0
+    assert normalized["average_hr_bpm"] == 120.0
+    assert swim["environment"] == "open_water"
+    assert swim["average_pace_per_100m_s"] == 200.0
+
+
 def test_open_water_swim_has_no_pool_length():
     activity = {"activityId": 7, "activityType": {"typeKey": "open_water_swimming"}}
 

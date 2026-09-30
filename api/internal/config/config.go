@@ -30,6 +30,7 @@ type Config struct {
 	EmailFrom             string
 	ImporterBaseURL       string
 	ImporterControlSecret string
+	DevelopmentLoginCode  string
 }
 
 func Load() (Config, error) {
@@ -48,6 +49,7 @@ func Load() (Config, error) {
 		EmailFrom:             strings.TrimSpace(os.Getenv("EMAIL_FROM")),
 		ImporterBaseURL:       strings.TrimRight(strings.TrimSpace(os.Getenv("IMPORTER_BASE_URL")), "/"),
 		ImporterControlSecret: strings.TrimSpace(os.Getenv("IMPORTER_CONTROL_SECRET")),
+		DevelopmentLoginCode:  strings.TrimSpace(os.Getenv("DEV_LOGIN_CODE")),
 	}
 	if cfg.DatabaseURL == "" {
 		return Config{}, errors.New("HEALTH_HUB_DATABASE_URL is required")
@@ -101,6 +103,9 @@ func Load() (Config, error) {
 	}
 	if cfg.EmailMode == "resend" && (cfg.ResendAPIKey == "" || cfg.EmailFrom == "") {
 		return Config{}, errors.New("RESEND_API_KEY and EMAIL_FROM are required in resend mode")
+	}
+	if cfg.Environment == "production" && cfg.DevelopmentLoginCode != "" {
+		return Config{}, errors.New("DEV_LOGIN_CODE is forbidden in production")
 	}
 	if cfg.Environment == "production" {
 		if !cfg.CookieSecure {

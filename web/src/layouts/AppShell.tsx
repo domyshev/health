@@ -25,6 +25,7 @@ import {
   type User,
 } from '../api/healthApi'
 import { ActivitiesPage } from '../features/activities/ActivitiesPage'
+import { ActivityDetailsPage } from '../features/activities/ActivityDetailsPage'
 import { GarminDrawer } from '../features/garmin/GarminDrawer'
 import type { AppDispatch } from '../store'
 import { resetUiState } from '../store'
@@ -49,6 +50,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
   const completedRunRef = useRef<string | undefined>(undefined)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [syncRunId, setSyncRunId] = useState<string>()
+  const [syncPending, setSyncPending] = useState(false)
   const visible = useDocumentVisible()
   const { data: connection } = useGetGarminConnectionQuery()
   const [startSync, startState] = useStartSyncMutation()
@@ -58,29 +60,36 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
     skip: !effectiveSyncRunId,
   })
 
-  const active = startState.isLoading || syncRun?.status === 'queued' || syncRun?.status === 'running'
-  const connected = connection?.status === 'connected'
+  const syncComplete = syncRun?.status === 'succeeded' || syncRun?.status === 'complete'
+  const syncPartial = syncRun?.status === 'partial'
+  const syncTerminal = syncComplete || syncPartial || syncRun?.status === 'failed' || syncRun?.status === 'reconnect_required'
+  const currentRunKnown = !syncRunId || syncRun?.id === syncRunId
+  const active = (syncPending && (!currentRunKnown || !syncTerminal)) || startState.isLoading || (Boolean(syncRunId) && (!currentRunKnown || !syncTerminal)) || syncRun?.status === 'queued' || syncRun?.status === 'running'
+  const connected = connection?.status === 'connected' || connection?.status === 'active'
+  const reconnectRequired = connection?.status === 'reconnect_required' || connection?.status === 'reauth_required'
 
   useEffect(() => {
-    if (!visible || !effectiveSyncRunId || ['succeeded', 'failed', 'reconnect_required'].includes(syncRun?.status ?? '')) return
-    const timer = window.setInterval(() => void refetchSyncRun(), 1000)
+    if (!visible || !effectiveSyncRunId || syncTerminal) return
+    const timer = window.setInterval(() => void refetchSyncRun(), 10_000)
     return () => window.clearInterval(timer)
-  }, [effectiveSyncRunId, refetchSyncRun, syncRun?.status, visible])
+  }, [effectiveSyncRunId, refetchSyncRun, syncTerminal, visible])
 
   useEffect(() => {
-    if (!syncRun || !['succeeded', 'failed', 'reconnect_required'].includes(syncRun.status)) return
+    if (!syncRun || !syncTerminal) return
     if (completedRunRef.current === syncRun.id) return
     completedRunRef.current = syncRun.id
     dispatch(healthApi.util.invalidateTags(['Activities', 'Garmin']))
-  }, [dispatch, syncRun])
+  }, [dispatch, syncRun, syncTerminal])
 
-  async function beginSync() {
+  async function beginSync(mode: 'recent' | 'full_history' = 'recent') {
     if (active || !connected) return
+    setSyncPending(true)
     try {
-      const run = await startSync().unwrap()
+      const run = await startSync({ mode }).unwrap()
       completedRunRef.current = undefined
       setSyncRunId(run.syncRunId)
     } catch {
+      setSyncPending(false)
       // Mutation state provides a safe user-facing message.
     }
   }
@@ -97,11 +106,13 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
     }
   }
 
-  const syncLabel = connection?.status === 'reconnect_required'
+  const syncLabel = reconnectRequired
     ? 'Reconnect required'
-    : syncRun?.status === 'succeeded'
+    : syncComplete
       ? 'Sync complete'
-      : syncRun?.status === 'failed'
+      : syncPartial
+        ? 'Sync partially complete'
+        : syncRun?.status === 'failed'
         ? 'Sync failed'
         : syncRun?.status === 'queued'
           ? 'Sync queued'
@@ -117,7 +128,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
         <Toolbar sx={{ gap: 1.25 }}>
           <Typography sx={{ flexGrow: 1, fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health Hub</Typography>
           <Chip
-            color={syncRun?.status === 'failed' ? 'error' : connection?.status === 'reconnect_required' ? 'warning' : syncRun?.status === 'succeeded' ? 'success' : 'default'}
+            color={syncRun?.status === 'failed' ? 'error' : reconnectRequired || syncPartial ? 'warning' : syncComplete ? 'success' : 'default'}
             label={syncLabel}
             size="small"
             sx={{ display: { xs: 'none', md: 'inline-flex' } }}
@@ -162,6 +173,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
       <Box component="main" sx={{ mx: 'auto', maxWidth: 1180, p: { xs: 2, sm: 4 } }}>
         <Routes>
           <Route element={<ActivitiesPage />} path="/" />
+          <Route element={<ActivityDetailsPage />} path="/activities/:activityId" />
           <Route element={<ActivitiesPage />} path="*" />
         </Routes>
       </Box>

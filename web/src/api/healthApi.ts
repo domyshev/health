@@ -74,6 +74,10 @@ export const healthApi = createApi({
       },
       providesTags: ['Activities'],
     }),
+    getActivity: builder.query<Activity, string>({
+      query: (id) => ({ url: `/v1/activities/${encodeURIComponent(id)}` }),
+      providesTags: ['Activities'],
+    }),
     getGarminConnection: builder.query<GarminConnection, void>({
       query: () => ({ url: '/v1/integrations/garmin' }),
       providesTags: ['Garmin'],
@@ -90,8 +94,8 @@ export const healthApi = createApi({
       }),
       invalidatesTags: (_result, error) => error ? [] : ['Garmin'],
     }),
-    startSync: builder.mutation<Schemas['SyncStart'], void>({
-      query: () => ({ url: '/v1/sync-runs', method: 'POST' }),
+    startSync: builder.mutation<Schemas['SyncStart'], { mode: 'recent' | 'full_history' }>({
+      query: (body) => ({ url: '/v1/sync-runs', method: 'POST', body }),
       invalidatesTags: ['Garmin'],
     }),
     getSyncRun: builder.query<SyncRun, string>({
@@ -106,6 +110,7 @@ export const healthApi = createApi({
 
 export const {
   useConnectGarminMutation,
+  useGetActivityQuery,
   useGetActivitiesQuery,
   useGetGarminConnectionQuery,
   useGetMeQuery,

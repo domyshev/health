@@ -65,25 +65,27 @@ type EmailSender interface {
 }
 
 type ServiceConfig struct {
-	Repository      Repository
-	Sender          EmailSender
-	Secret          []byte
-	AllowedEmails   map[string]struct{}
-	CodeLifetime    time.Duration
-	SessionLifetime time.Duration
-	Random          io.Reader
-	Now             func() time.Time
+	Repository           Repository
+	Sender               EmailSender
+	Secret               []byte
+	AllowedEmails        map[string]struct{}
+	CodeLifetime         time.Duration
+	SessionLifetime      time.Duration
+	Random               io.Reader
+	Now                  func() time.Time
+	DevelopmentLoginCode string
 }
 
 type Service struct {
-	repository      Repository
-	sender          EmailSender
-	secret          []byte
-	allowedEmails   map[string]struct{}
-	codeLifetime    time.Duration
-	sessionLifetime time.Duration
-	random          io.Reader
-	now             func() time.Time
+	repository           Repository
+	sender               EmailSender
+	secret               []byte
+	allowedEmails        map[string]struct{}
+	codeLifetime         time.Duration
+	sessionLifetime      time.Duration
+	random               io.Reader
+	now                  func() time.Time
+	developmentLoginCode string
 }
 
 func NewService(cfg ServiceConfig) *Service {
@@ -94,14 +96,15 @@ func NewService(cfg ServiceConfig) *Service {
 		cfg.Now = time.Now
 	}
 	return &Service{
-		repository:      cfg.Repository,
-		sender:          cfg.Sender,
-		secret:          append([]byte(nil), cfg.Secret...),
-		allowedEmails:   cfg.AllowedEmails,
-		codeLifetime:    cfg.CodeLifetime,
-		sessionLifetime: cfg.SessionLifetime,
-		random:          cfg.Random,
-		now:             cfg.Now,
+		repository:           cfg.Repository,
+		sender:               cfg.Sender,
+		secret:               append([]byte(nil), cfg.Secret...),
+		allowedEmails:        cfg.AllowedEmails,
+		codeLifetime:         cfg.CodeLifetime,
+		sessionLifetime:      cfg.SessionLifetime,
+		random:               cfg.Random,
+		now:                  cfg.Now,
+		developmentLoginCode: cfg.DevelopmentLoginCode,
 	}
 }
 
@@ -153,7 +156,16 @@ func (s *Service) VerifyCode(
 	userAgent string,
 ) (VerifyResult, error) {
 	email, err := NormalizeEmail(rawEmail)
-	if err != nil || !validCode(code) {
+	if err != nil {
+		return VerifyResult{}, ErrInvalidOrExpiredCode
+	}
+	if s.developmentLoginCode != "" && code == s.developmentLoginCode {
+		if _, allowed := s.allowedEmails[email]; !allowed {
+			return VerifyResult{}, ErrInvalidOrExpiredCode
+		}
+		return s.createSession(ctx, email, requestIP, userAgent)
+	}
+	if !validCode(code) {
 		return VerifyResult{}, ErrInvalidOrExpiredCode
 	}
 	if _, allowed := s.allowedEmails[email]; !allowed {
@@ -173,6 +185,15 @@ func (s *Service) VerifyCode(
 	if !valid {
 		return VerifyResult{}, ErrInvalidOrExpiredCode
 	}
+	user, err := s.createSession(ctx, email, requestIP, userAgent)
+	if err != nil {
+		return VerifyResult{}, err
+	}
+	return user, nil
+}
+
+func (s *Service) createSession(ctx context.Context, email string, requestIP netip.Addr, userAgent string) (VerifyResult, error) {
+	now := s.now().UTC()
 	token, tokenHash, err := GenerateSessionToken(s.random)
 	if err != nil {
 		return VerifyResult{}, err

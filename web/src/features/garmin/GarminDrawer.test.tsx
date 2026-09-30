@@ -15,6 +15,28 @@ function json(body: unknown, status = 200) {
 }
 
 describe('Garmin connection', () => {
+  it('shows the stored active status as connected', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const path = String(input)
+      if (path.endsWith('/v1/integrations/garmin')) {
+        return json({ status: 'active', garminEmail: 'athlete@example.com' })
+      }
+      throw new Error(`Unexpected request: ${path}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+
+    render(<GarminDrawer onClose={() => undefined} open />, { wrapper: TestProviders })
+
+    expect(await screen.findByText(/^connected$/i)).toBeInTheDocument()
+    expect(screen.getByText(/authorization completed successfully/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/garmin password/i)).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: /refresh access/i }))
+    expect(screen.getByLabelText(/garmin email/i)).toHaveValue('athlete@example.com')
+    expect(screen.getByLabelText(/garmin password/i)).toBeInTheDocument()
+  })
+
   it('keeps password and MFA challenge out of persisted state', async () => {
     let connected = false
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {

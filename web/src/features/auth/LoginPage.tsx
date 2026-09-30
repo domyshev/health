@@ -103,12 +103,12 @@ export function LoginPage() {
                     label="Verification code"
                     onChange={(event) => setCode(event.target.value.replace(/\D/g, ''))}
                     required
-                    slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 6, pattern: '[0-9]{6}' } }}
+                    slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 6, pattern: '[0-9]{4,6}' } }}
                     value={code}
                   />
                   {verifyState.isError && <Alert severity="error">The code is invalid or expired.</Alert>}
                   {requestState.isError && <Alert severity="error">{requestErrorMessage(requestState.error)}</Alert>}
-                  <Button disabled={code.length !== 6} type="submit" variant="contained">
+                  <Button disabled={code.length < 4} type="submit" variant="contained">
                     {verifyState.isLoading ? <CircularProgress size={22} /> : 'Verify'}
                   </Button>
                   <Button disabled={cooldown > 0 || requestState.isLoading} onClick={() => void resendCode()}>

@@ -37,7 +37,7 @@ type SyncResult struct {
 type Client interface {
 	Connect(context.Context, string, string, string) (ConnectResult, error)
 	VerifyMFA(context.Context, string, string, string) (ConnectResult, error)
-	StartSync(context.Context, string, string) (SyncResult, error)
+	StartSync(context.Context, string, string, string) (SyncResult, error)
 }
 
 type HTTPClient struct {
@@ -78,11 +78,12 @@ func (c *HTTPClient) VerifyMFA(ctx context.Context, userID, challengeID, code st
 	return result, err
 }
 
-func (c *HTTPClient) StartSync(ctx context.Context, userID, connectionID string) (SyncResult, error) {
+func (c *HTTPClient) StartSync(ctx context.Context, userID, connectionID, mode string) (SyncResult, error) {
 	var result SyncResult
 	err := c.post(ctx, "/private/v1/sync-runs", map[string]string{
 		"userId":       userID,
 		"connectionId": connectionID,
+		"mode":         mode,
 	}, &result)
 	return result, err
 }

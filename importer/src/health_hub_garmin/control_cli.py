@@ -48,7 +48,7 @@ def main() -> int:
     )
     store = PostgresStore(database_url)
 
-    def run_sync(user_id: str, connection_id: str, run_id: str) -> None:
+    def run_sync(user_id: str, connection_id: str, run_id: str, mode: str) -> None:
         try:
             token_dir = token_root / user_id
             client = load_saved_client(token_dir)
@@ -61,6 +61,7 @@ def main() -> int:
                 connection_id=connection_id,
                 user_id=user_id,
                 run_id=run_id,
+                mode=mode,
             )
         except Exception as exc:
             store.finish_sync_run(
