@@ -18,3 +18,4 @@ web/dist/
 web/playwright-report/
 web/test-results/
 web/.schema.generated.d.ts
+.sandbox/
