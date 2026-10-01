@@ -47,3 +47,17 @@ from the rebuilt image, install it first (`apt-get install -y postgresql-17`),
 then run the script. Never run `pg_dropcluster` or re-run
 `pg_createcluster --start` over the persistent path; the existing cluster there
 is the source of truth.
+
+## Sandbox web entry point
+
+The sandbox web proxy (static frontend + `/v1/` proxying to the API) lives at
+`/workspace/health-hub/.sandbox/static_proxy.py` and listens on port **10000**
+(override with `HEALTH_HUB_WEB_PORT`). It must be started after PostgreSQL:
+
+```
+python3 /workspace/health-hub/.sandbox/static_proxy.py
+```
+
+Services after a rebuild, in order: `init-postgres.sh` → health-hub-api →
+health-hub-garmin-control → static_proxy.py. API and importer stay on loopback
+(8080/8081); only the proxy (10000) is exposed.
