@@ -188,7 +188,7 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
             </Typography>
             {syncState.isError && <Alert severity="error">Synchronization could not be started. Try again.</Alert>}
             <Button disabled={syncState.isLoading} onClick={() => void startInitialSync('full_history')} variant="contained">
-              {syncState.isLoading ? <CircularProgress size={22} /> : 'Import full history'}
+              {syncState.isLoading ? <CircularProgress color="inherit" size={22} /> : 'Import full history'}
             </Button>
             <Button disabled={syncState.isLoading} onClick={() => void startInitialSync('recent')} variant="outlined">Quick sync</Button>
             <Typography color="text.secondary" variant="caption">
@@ -221,7 +221,7 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
               {syncState.isError && <Alert severity="error" sx={{ mt: 1.5 }}>Full history import could not be started. Try again.</Alert>}
               {syncState.isSuccess && !fullHistoryRun && <Alert severity="success" sx={{ mt: 1.5 }}>Full history import was accepted; preparing progress…</Alert>}
               <Button disabled={syncState.isLoading || fullHistoryRun?.status === 'running'} onClick={() => void importFullHistory()} sx={{ mt: 1.5 }} variant="contained">
-                {syncState.isLoading || fullHistoryRun?.status === 'running' ? <CircularProgress size={22} /> : 'Import full history'}
+                {syncState.isLoading || fullHistoryRun?.status === 'running' ? <CircularProgress color="inherit" size={22} /> : 'Import full history'}
               </Button>
             </Box>
           </Stack>
@@ -252,7 +252,7 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
                 value={password}
               />
               <Button disabled={!email || !password} type="submit" variant="contained">
-                {connectState.isLoading ? <CircularProgress size={22} /> : displayConnected ? 'Refresh access' : 'Connect Garmin'}
+                {connectState.isLoading ? <CircularProgress color="inherit" size={22} /> : displayConnected ? 'Refresh access' : 'Connect Garmin'}
               </Button>
             </Stack>
           </Box>

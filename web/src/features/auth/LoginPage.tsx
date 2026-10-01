@@ -89,7 +89,7 @@ export function LoginPage() {
                   />
                   {requestState.isError && <Alert severity="error">{requestErrorMessage(requestState.error)}</Alert>}
                   <Button endIcon={<ArrowForwardRounded />} type="submit" variant="contained">
-                    {requestState.isLoading ? <CircularProgress size={22} /> : 'Send code'}
+                    {requestState.isLoading ? <CircularProgress color="inherit" size={22} /> : 'Send code'}
                   </Button>
                 </Stack>
               </Box>
@@ -109,7 +109,7 @@ export function LoginPage() {
                   {verifyState.isError && <Alert severity="error">The code is invalid or expired.</Alert>}
                   {requestState.isError && <Alert severity="error">{requestErrorMessage(requestState.error)}</Alert>}
                   <Button disabled={code.length < 4} type="submit" variant="contained">
-                    {verifyState.isLoading ? <CircularProgress size={22} /> : 'Verify'}
+                    {verifyState.isLoading ? <CircularProgress color="inherit" size={22} /> : 'Verify'}
                   </Button>
                   <Button disabled={cooldown > 0 || requestState.isLoading} onClick={() => void resendCode()}>
                     {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
