@@ -25,39 +25,27 @@ All newly written or edited code comments must be in English, even when the
 surrounding discussion, task description, or private planning document is in
 another language.
 
-## Sandbox persistence: PostgreSQL data
+## Production deployment
 
-The PostgreSQL 17 cluster serving this project lives OUTSIDE the container's
-writable layer, at `/workspace/health-hub/.sandbox/postgres` (the `/workspace`
-mount survives sandbox container rebuilds; `/etc` and `/var/lib` do NOT).
+The root Dockerfile packages the dashboard, Go API, and migration executable.
+The importer has its own Dockerfile and must remain a separate process with
+exclusive access to Garmin tokens and original activity files.
 
-The `data_directory` setting in `/etc/postgresql/17/main/postgresql.conf` is
-lost whenever the sandbox container is rebuilt. Therefore:
+Production runs as an independent Docker Compose stack. Actual host settings,
+backup and recovery procedures, secrets, and deployment updater configuration
+belong to the separate private infrastructure repository. Do not put them here.
 
-**Mandatory after every sandbox rebuild/reset, before starting any Health Hub
-service:** run
+Pushes to `main` trigger `.github/workflows/deploy-web.yml`. A successful build
+publishes immutable images; a deployment tag is created only after the production
+readiness endpoint confirms the same commit. Preserve those checks.
 
-```
-/workspace/health-hub/.sandbox/init-postgres.sh
-```
+Before database migrations, stop application writers and take a verified backup.
+Rollback requires the matching database snapshot as well as the previous images.
+Never expose PostgreSQL or the private Garmin control endpoint publicly.
 
-as root. It re-points the cluster at the persistent data directory, starts it,
-and verifies the `health_hub` database answers. If `postgresql-17` is missing
-from the rebuilt image, install it first (`apt-get install -y postgresql-17`),
-then run the script. Never run `pg_dropcluster` or re-run
-`pg_createcluster --start` over the persistent path; the existing cluster there
-is the source of truth.
+## Retired sandbox
 
-## Sandbox web entry point
-
-The sandbox web proxy (static frontend + `/v1/` proxying to the API) lives at
-`/workspace/health-hub/.sandbox/static_proxy.py` and listens on port **10000**
-(override with `HEALTH_HUB_WEB_PORT`). It must be started after PostgreSQL:
-
-```
-python3 /workspace/health-hub/.sandbox/static_proxy.py
-```
-
-Services after a rebuild, in order: `init-postgres.sh` → health-hub-api →
-health-hub-garmin-control → static_proxy.py. API and importer stay on loopback
-(8080/8081); only the proxy (10000) is exposed.
+The former Hermes sandbox installation was retired and archived on 2026-11-09.
+Do not restart it or use its database, tokens, environment files, or old deployment
+scripts as production defaults. Production started with a fresh PostgreSQL 17
+cluster; historical sandbox data is retained privately for recovery only.

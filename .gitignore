@@ -19,3 +19,17 @@ web/playwright-report/
 web/test-results/
 web/.schema.generated.d.ts
 .sandbox/
+
+# Keep runtime credentials and personal exports out of the public repository.
+.env.*
+!.env.example
+*.env
+*.dump
+*.sqlite
+*.sqlite3
+*.db
+*.fit
+*.gpx
+*.tcx
+*.pem
+*.key
