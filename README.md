@@ -80,3 +80,22 @@ It reuses tokens under `.secrets/garmin/` and never modifies the Garmin account.
 - Garmin passwords and MFA codes are accepted only by the private importer control process and are not stored.
 - The Go API cannot access Garmin tokens or call Garmin Connect.
 - Raw Garmin responses are internal audit and reprocessing data, not a public API contract.
+
+## Production containers and automatic releases
+
+The root Dockerfile builds the dashboard, API, and migration executable into an
+unprivileged image. `importer/Dockerfile` builds a separate Garmin control image.
+Set `STATIC_DIR` to serve the dashboard from the Go API; API and health routes
+retain their existing authentication and readiness behavior.
+
+Pushes to `main` run frontend checks, Go race tests and PostgreSQL integration
+tests, and importer tests on GitHub-hosted runners. Successful builds publish
+`web-<commit>` releases containing only application images and a checksum manifest.
+A deployment tag is created only after the production readiness endpoint and
+`deployment.json` confirm that exact commit. Infrastructure configuration,
+credentials, databases, and Garmin tokens remain outside this public repository.
+
+Run production migrations with `health-hub-migrate` before starting the new API
+and importer. Back up PostgreSQL and stop writers before applying migrations.
+A failed deployment must restore a matching database snapshot before reverting
+the images; an older executable alone cannot undo a schema migration.

@@ -73,6 +73,9 @@ func main() {
 		TrustedProxies:   cfg.TrustedProxies,
 		RequestBodyLimit: 1 << 20,
 	}).Handler()
+	if directory := os.Getenv("STATIC_DIR"); directory != "" {
+		handler = httpapi.WithFrontend(directory, handler)
+	}
 	server := &http.Server{
 		Addr:              cfg.Address,
 		Handler:           handler,

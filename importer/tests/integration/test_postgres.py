@@ -31,7 +31,7 @@ def test_private_control_connection_and_sync_reservation(tmp_path: Path):
         "garmin@example.com",
     )
 
-    run_id = store.reserve_sync_run(user_id, connection_id)
+    run_id = store.reserve_sync_run(user_id, connection_id, "recent")
 
     assert uuid.UUID(run_id)
     assert scalar(
@@ -40,9 +40,9 @@ def test_private_control_connection_and_sync_reservation(tmp_path: Path):
         (connection_id,),
     ) == "garmin@example.com"
     with pytest.raises(SyncAlreadyRunningError):
-        store.reserve_sync_run(user_id, connection_id)
+        store.reserve_sync_run(user_id, connection_id, "recent")
     with pytest.raises(ValueError):
-        store.reserve_sync_run(str(uuid.uuid4()), connection_id)
+        store.reserve_sync_run(str(uuid.uuid4()), connection_id, "recent")
 
 
 class SwimClient:
