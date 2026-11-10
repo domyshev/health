@@ -42,7 +42,7 @@ Required API settings:
 - `AUTH_ALLOWED_EMAILS`: comma-separated login allowlist.
 - `APP_ORIGINS`: comma-separated browser origins. Production requires at least one origin.
 - `EMAIL_MODE`: `resend` in production or `log` in explicit development mode.
-- `RESEND_API_KEY` and `EMAIL_FROM`: required when `EMAIL_MODE=resend`.
+- `RESEND_API_KEY` and `EMAIL_FROM`: required when `EMAIL_MODE=resend`. The sender address comes from `EMAIL_FROM`; its display name is always `Health Hub`.
 - `IMPORTER_BASE_URL` and `IMPORTER_CONTROL_SECRET`: private importer control service settings. They must be configured together, the shared secret must contain at least 32 characters, and both are required in production.
 
 Optional API settings:

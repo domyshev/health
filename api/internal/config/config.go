@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"net/mail"
 	"net/netip"
 	"net/url"
 	"os"
@@ -103,6 +104,13 @@ func Load() (Config, error) {
 	}
 	if cfg.EmailMode == "resend" && (cfg.ResendAPIKey == "" || cfg.EmailFrom == "") {
 		return Config{}, errors.New("RESEND_API_KEY and EMAIL_FROM are required in resend mode")
+	}
+	if cfg.EmailMode == "resend" {
+		from, err := mail.ParseAddress(cfg.EmailFrom)
+		if err != nil {
+			return Config{}, errors.New("EMAIL_FROM must be a valid email address")
+		}
+		cfg.EmailFrom = (&mail.Address{Name: "Health Hub", Address: from.Address}).String()
 	}
 	if cfg.Environment == "production" && cfg.DevelopmentLoginCode != "" {
 		return Config{}, errors.New("DEV_LOGIN_CODE is forbidden in production")

@@ -1,6 +1,27 @@
 package config
 
-import "testing"
+import (
+	"net/mail"
+	"testing"
+)
+
+func TestLoadUsesHealthHubSenderName(t *testing.T) {
+	t.Setenv("HEALTH_HUB_DATABASE_URL", "postgresql://db/health")
+	t.Setenv("AUTH_SECRET", "01234567890123456789012345678901")
+	t.Setenv("AUTH_ALLOWED_EMAILS", "user@example.com")
+	t.Setenv("EMAIL_MODE", "resend")
+	t.Setenv("RESEND_API_KEY", "resend-key")
+	t.Setenv("EMAIL_FROM", "Road Rules Trainer <login@example.com>")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	from, err := mail.ParseAddress(cfg.EmailFrom)
+	if err != nil || from.Name != "Health Hub" || from.Address != "login@example.com" {
+		t.Fatalf("unexpected sender: %q (%v)", cfg.EmailFrom, err)
+	}
+}
 
 func TestLoadRequiresProductionSecretsAndParsesLists(t *testing.T) {
 	t.Setenv("HEALTH_HUB_DATABASE_URL", "postgresql://db/health")

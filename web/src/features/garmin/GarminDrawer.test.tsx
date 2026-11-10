@@ -29,7 +29,7 @@ describe('Garmin connection', () => {
     render(<GarminDrawer onClose={() => undefined} open />, { wrapper: TestProviders })
 
     expect(await screen.findByText(/^connected$/i)).toBeInTheDocument()
-    expect(screen.getByText(/authorization completed successfully/i)).toBeInTheDocument()
+    expect(screen.getByText(/garmin is connected/i)).toBeInTheDocument()
     expect(screen.queryByLabelText(/garmin password/i)).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /refresh access/i }))

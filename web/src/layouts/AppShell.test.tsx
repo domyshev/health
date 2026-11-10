@@ -171,5 +171,9 @@ describe('protected application shell', () => {
 
     expect((await screen.findAllByText(/syncing/i)).length).toBeGreaterThan(0)
     expect(syncReads).toBeGreaterThan(0)
+    await userEvent.setup().click(screen.getByRole('button', { name: /garmin settings/i }))
+    expect(await screen.findByText(/sync in progress: 0 discovered/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /import full history/i })).toBeDisabled()
+    expect(screen.queryByText(/full history import complete/i)).not.toBeInTheDocument()
   })
 })

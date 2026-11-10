@@ -2,14 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link as RouterLink } from 'react-router-dom'
 import AccessTimeRounded from '@mui/icons-material/AccessTimeRounded'
-import DirectionsBikeRounded from '@mui/icons-material/DirectionsBikeRounded'
 import DirectionsRunRounded from '@mui/icons-material/DirectionsRunRounded'
-import DirectionsWalkRounded from '@mui/icons-material/DirectionsWalkRounded'
 import FavoriteRounded from '@mui/icons-material/FavoriteRounded'
-import FitnessCenterRounded from '@mui/icons-material/FitnessCenterRounded'
 import LocalFireDepartmentRounded from '@mui/icons-material/LocalFireDepartmentRounded'
 import MoreHorizRounded from '@mui/icons-material/MoreHorizRounded'
-import PoolRounded from '@mui/icons-material/PoolRounded'
 import StraightenRounded from '@mui/icons-material/StraightenRounded'
 import {
   Alert,
@@ -33,6 +29,10 @@ import {
   type Activity,
 } from '../../api/healthApi'
 import { setActivityType, type AppDispatch, type RootState } from '../../store'
+import cyclingImage from '../../assets/activities/cycling.png'
+import swimmingImage from '../../assets/activities/swimming.png'
+import walkingImage from '../../assets/activities/walking.png'
+import strengthImage from '../../assets/activities/strength.png'
 
 const activityTypes = ['all', 'running', 'cycling', 'walking', 'swimming', 'strength', 'other']
 
@@ -55,15 +55,12 @@ function pace(seconds?: number) {
 function activityIcon(type: Activity['type']) {
   switch (type) {
     case 'running': return <DirectionsRunRounded />
-    case 'cycling': return <DirectionsBikeRounded />
-    case 'walking': return <DirectionsWalkRounded />
-    case 'swimming': return <PoolRounded />
-    case 'strength': return <FitnessCenterRounded />
     default: return <MoreHorizRounded />
   }
 }
 
 function ActivityCard({ activity }: { activity: Activity }) {
+  const image = ({ cycling: cyclingImage, swimming: swimmingImage, walking: walkingImage, strength: strengthImage } as Record<string, string>)[activity.type]
   return (
     <Card sx={{ height: '100%', borderRadius: 4 }}>
       <CardActionArea component={RouterLink} sx={{ height: '100%', p: 0.5 }} to={`/activities/${activity.id}`}>
@@ -78,13 +75,20 @@ function ActivityCard({ activity }: { activity: Activity }) {
                   {activity.name || activity.type}
                 </Typography>
               </Box>
-              <Chip
+              {image ? <Box
+                aria-label={activity.type.replace('_', ' ')}
+                component="span"
+                role="img"
+                sx={{ alignItems: 'center', backgroundColor: '#f3f4ef', borderRadius: 2.5, display: 'flex', flexShrink: 0, height: 54, justifyContent: 'center', p: 0.75, width: 72 }}
+              >
+                <Box alt="" component="img" src={image} sx={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              </Box> : <Chip
                 color="primary"
                 icon={activityIcon(activity.type)}
                 label={activity.type.replace('_', ' ')}
                 size="small"
                 variant="outlined"
-              />
+              />}
             </Stack>
             <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 2.5 }}>
               {activity.distanceM !== undefined && (

@@ -46,9 +46,10 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
   const [connectGarmin, connectState] = useConnectGarminMutation()
   const [verifyMfa, verifyState] = useVerifyGarminMfaMutation()
   const [startSync, syncState] = useStartSyncMutation()
-  const { data: fullHistoryRun } = useGetSyncRunQuery(fullHistoryRunId ?? '', {
-    skip: !fullHistoryRunId,
-    pollingInterval: fullHistoryRunId ? 10_000 : 0,
+  const activeRunId = connection?.activeSyncRunId ?? fullHistoryRunId
+  const { currentData: fullHistoryRun } = useGetSyncRunQuery(activeRunId ?? '', {
+    skip: !activeRunId,
+    pollingInterval: activeRunId ? 10_000 : 0,
   })
 
   useEffect(() => {
@@ -100,7 +101,7 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
   async function startInitialSync(mode: 'recent' | 'full_history') {
     try {
       const result = await startSync({ mode }).unwrap()
-      setFullHistoryRunId(result.syncRunId)
+      setFullHistoryRunId(mode === 'full_history' ? result.syncRunId : undefined)
       setConnectionComplete(false)
       void refetch()
     } catch {
@@ -115,6 +116,8 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
   const connected = connection?.status === 'connected' || connection?.status === 'active'
   const displayConnected = connected || connectionComplete
   const reconnectRequired = connection?.status === 'reconnect_required' || connection?.status === 'reauth_required'
+  const runActive = !!activeRunId && (!fullHistoryRun || fullHistoryRun.status === 'queued' || fullHistoryRun.status === 'running')
+  const isFullHistoryRun = !!fullHistoryRunId && fullHistoryRun?.id === fullHistoryRunId
 
   return (
     <Drawer
@@ -198,7 +201,7 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
         ) : displayConnected && !showCredentialsForm ? (
           <Stack spacing={2}>
             <Alert severity="success">
-              Garmin authorization completed successfully. You can now start synchronization.
+              Garmin is connected. You can manage synchronization below.
             </Alert>
             <Button
               onClick={() => {
@@ -215,13 +218,12 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
               <Typography color="text.secondary" sx={{ mt: 0.5 }} variant="body2">
                 Import every activity available from Garmin. This can take a while; ordinary Sync only checks recent activity.
               </Typography>
-              {fullHistoryRun?.status === 'running' && <Alert icon={<CircularProgress size={20} />} severity="info" sx={{ mt: 1.5 }}>Importing history: {fullHistoryRun.discoveredCount} discovered, {fullHistoryRun.importedCount + fullHistoryRun.updatedCount} saved so far.</Alert>}
-              {fullHistoryRun?.status === 'complete' && <Alert severity="success" sx={{ mt: 1.5 }}>Full history import complete: {fullHistoryRun.importedCount} new and {fullHistoryRun.updatedCount} updated activities.</Alert>}
-              {fullHistoryRun?.status === 'partial' || fullHistoryRun?.status === 'failed' ? <Alert severity="error" sx={{ mt: 1.5 }}>Full history import did not complete. Refresh Garmin access and try again.</Alert> : null}
+              {runActive && <Alert icon={<CircularProgress size={20} />} severity="info" sx={{ mt: 1.5 }}>{fullHistoryRun ? `Sync in progress: ${fullHistoryRun.discoveredCount} discovered, ${fullHistoryRun.importedCount + fullHistoryRun.updatedCount} saved so far.` : 'Preparing synchronization…'}</Alert>}
+              {isFullHistoryRun && (fullHistoryRun?.status === 'complete' || fullHistoryRun?.status === 'succeeded') && <Alert severity="success" sx={{ mt: 1.5 }}>Full history import complete: {fullHistoryRun.importedCount} new and {fullHistoryRun.updatedCount} updated activities.</Alert>}
+              {isFullHistoryRun && (fullHistoryRun?.status === 'partial' || fullHistoryRun?.status === 'failed' || fullHistoryRun?.status === 'reconnect_required') ? <Alert severity="error" sx={{ mt: 1.5 }}>Full history import did not complete. Refresh Garmin access and try again.</Alert> : null}
               {syncState.isError && <Alert severity="error" sx={{ mt: 1.5 }}>Full history import could not be started. Try again.</Alert>}
-              {syncState.isSuccess && !fullHistoryRun && <Alert severity="success" sx={{ mt: 1.5 }}>Full history import was accepted; preparing progress…</Alert>}
-              <Button disabled={syncState.isLoading || fullHistoryRun?.status === 'running'} onClick={() => void importFullHistory()} sx={{ mt: 1.5 }} variant="contained">
-                {syncState.isLoading || fullHistoryRun?.status === 'running' ? <CircularProgress color="inherit" size={22} /> : 'Import full history'}
+              <Button disabled={syncState.isLoading || runActive} onClick={() => void importFullHistory()} sx={{ mt: 1.5 }} variant="contained">
+                Import full history
               </Button>
             </Box>
           </Stack>
