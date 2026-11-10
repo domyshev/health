@@ -46,7 +46,7 @@ async function mockBaseApi(page: Page, authenticated = true) {
   })
 }
 
-test('passwordless login opens the dashboard and logout ends the server session', async ({ page }, testInfo) => {
+test('passwordless login opens the dashboard and logout ends the server session', async ({ page }) => {
   await mockBaseApi(page, false)
   await page.goto('/')
 
@@ -61,8 +61,9 @@ test('passwordless login opens the dashboard and logout ends the server session'
   await code.press('Enter')
 
   await expect(page.getByRole('heading', { name: 'Activities', exact: true })).toBeVisible()
-  if (!testInfo.project.name.includes('mobile')) await expect(page.getByText('Runner')).toBeVisible()
-  await page.getByRole('button', { name: 'Log out' }).click()
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await expect(page.getByText('runner@example.com')).toBeVisible()
+  await page.getByRole('menuitem', { name: /Log out/ }).click()
   await expect(page.getByRole('heading', { name: /privately organized/i })).toBeVisible()
 })
 

@@ -62,7 +62,8 @@ describe('protected application shell', () => {
     await new Promise((resolve) => window.setTimeout(resolve, 1200))
     expect(syncReads).toBe(readsAfterCompletion)
 
-    await user.click(screen.getByRole('button', { name: /log out/i }))
+    await user.click(screen.getByRole('button', { name: /^menu$/i }))
+    await user.click(screen.getByRole('menuitem', { name: /log out/i }))
     await waitFor(() => expect(onLoggedOut).toHaveBeenCalledOnce())
   })
 
@@ -88,7 +89,14 @@ describe('protected application shell', () => {
       { wrapper: TestProviders },
     )
 
-    await user.click(await screen.findByRole('button', { name: /log out/i }))
+    await user.click(await screen.findByRole('button', { name: /^menu$/i }))
+    expect(screen.getByText('runner@example.com')).toBeInTheDocument()
+    await user.click(screen.getByRole('menuitem', { name: /about/i }))
+    expect(screen.getByRole('dialog', { name: /about health hub/i })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /github.com\/domyshev\/health/i })).toHaveAttribute('href', 'https://github.com/domyshev/health')
+    await user.click(screen.getByRole('button', { name: /close about/i }))
+    await user.click(screen.getByRole('button', { name: /^menu$/i }))
+    await user.click(screen.getByRole('menuitem', { name: /log out/i }))
 
     expect(await screen.findByText(/could not be completed/i)).toBeInTheDocument()
     expect(onLoggedOut).not.toHaveBeenCalled()
@@ -129,9 +137,11 @@ describe('protected application shell', () => {
       { wrapper: TestProviders },
     )
 
-    await user.click(await screen.findByText('Detailed swim'))
+    await user.click(await screen.findByRole('link', { name: /detailed swim/i }))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Detailed swim' })).toBeInTheDocument()
+    await user.hover(screen.getByRole('img', { name: 'Detailed swim' }))
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Detailed swim')
     expect(screen.getByText('100 m')).toBeInTheDocument()
     expect(screen.getByText('120 bpm')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /back to activities/i })).toBeInTheDocument()

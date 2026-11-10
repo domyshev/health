@@ -42,15 +42,19 @@ describe('activities', () => {
 
     render(<ActivitiesPage />, { wrapper: TestProviders })
 
-    expect(await screen.findByText('Morning swim')).toBeInTheDocument()
+    const icon = await screen.findByRole('img', { name: 'Morning swim' })
+    expect(icon).toBeInTheDocument()
+    await user.hover(icon)
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Morning swim')
+    await user.unhover(icon)
     expect(screen.getAllByText(/420 kcal/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/pool · 1:40 \/100m/i).length).toBeGreaterThan(0)
     await user.click(screen.getByLabelText(/activity type/i))
     await user.click(screen.getByRole('option', { name: 'swimming' }))
     await user.click(await screen.findByRole('button', { name: /load more/i }))
 
-    expect(await screen.findByText('Evening swim')).toBeInTheDocument()
-    expect(screen.getByText('Morning swim')).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'Evening swim' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Morning swim' })).toBeInTheDocument()
     await waitFor(() => {
       expect(String(fetchMock.mock.calls.at(-1)?.[0])).toContain('cursor=next-page')
     })
@@ -69,10 +73,10 @@ describe('activities', () => {
 
     render(<ActivitiesPage />, { wrapper: TestProviders })
 
-    expect(await screen.findByText('Unfiltered activity')).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'Unfiltered activity' })).toBeInTheDocument()
     await user.click(screen.getByLabelText(/activity type/i))
     await user.click(screen.getByRole('option', { name: 'running' }))
-    expect(await screen.findByText('Filtered run')).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'Filtered run' })).toBeInTheDocument()
 
     expect(requestedUrls.some((url) => url.includes('type=running') && url.includes('cursor=all-next'))).toBe(false)
     expect(screen.queryByRole('button', { name: /load more/i })).not.toBeInTheDocument()
@@ -88,7 +92,7 @@ describe('activities', () => {
 
     render(<ActivitiesPage />, { wrapper: TestProviders })
 
-    expect(await screen.findByText('Strength session')).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: 'Strength session' })).toBeInTheDocument()
     expect(screen.queryByText('—')).not.toBeInTheDocument()
   })
 

@@ -2,10 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link as RouterLink } from 'react-router-dom'
 import AccessTimeRounded from '@mui/icons-material/AccessTimeRounded'
-import DirectionsRunRounded from '@mui/icons-material/DirectionsRunRounded'
 import FavoriteRounded from '@mui/icons-material/FavoriteRounded'
 import LocalFireDepartmentRounded from '@mui/icons-material/LocalFireDepartmentRounded'
-import MoreHorizRounded from '@mui/icons-material/MoreHorizRounded'
 import StraightenRounded from '@mui/icons-material/StraightenRounded'
 import {
   Alert,
@@ -14,7 +12,6 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  Chip,
   Grid,
   MenuItem,
   Skeleton,
@@ -29,10 +26,7 @@ import {
   type Activity,
 } from '../../api/healthApi'
 import { setActivityType, type AppDispatch, type RootState } from '../../store'
-import cyclingImage from '../../assets/activities/cycling.png'
-import swimmingImage from '../../assets/activities/swimming.png'
-import walkingImage from '../../assets/activities/walking.png'
-import strengthImage from '../../assets/activities/strength.png'
+import { ActivityIcon } from './ActivityIcon'
 
 const activityTypes = ['all', 'running', 'cycling', 'walking', 'swimming', 'strength', 'other']
 
@@ -52,43 +46,17 @@ function pace(seconds?: number) {
   return `${minutes}:${String(Math.round(seconds % 60)).padStart(2, '0')} /100m`
 }
 
-function activityIcon(type: Activity['type']) {
-  switch (type) {
-    case 'running': return <DirectionsRunRounded />
-    default: return <MoreHorizRounded />
-  }
-}
-
 function ActivityCard({ activity }: { activity: Activity }) {
-  const image = ({ cycling: cyclingImage, swimming: swimmingImage, walking: walkingImage, strength: strengthImage } as Record<string, string>)[activity.type]
   return (
-    <Card sx={{ height: '100%', borderRadius: 4 }}>
+    <Card sx={{ height: '100%', borderRadius: '16px' }}>
       <CardActionArea component={RouterLink} sx={{ height: '100%', p: 0.5 }} to={`/activities/${activity.id}`}>
         <CardContent>
           <Stack spacing={2}>
             <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
-              <Box>
-                <Typography color="text.secondary" variant="caption">
-                  {activity.startedAt ? new Date(activity.startedAt).toLocaleString() : 'Date unavailable'}
-                </Typography>
-                <Typography component="h2" sx={{ fontWeight: 750 }} variant="h6">
-                  {activity.name || activity.type}
-                </Typography>
-              </Box>
-              {image ? <Box
-                aria-label={activity.type.replace('_', ' ')}
-                component="span"
-                role="img"
-                sx={{ alignItems: 'center', backgroundColor: '#f3f4ef', borderRadius: 2.5, display: 'flex', flexShrink: 0, height: 54, justifyContent: 'center', p: 0.75, width: 72 }}
-              >
-                <Box alt="" component="img" src={image} sx={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-              </Box> : <Chip
-                color="primary"
-                icon={activityIcon(activity.type)}
-                label={activity.type.replace('_', ' ')}
-                size="small"
-                variant="outlined"
-              />}
+              <ActivityIcon activity={activity} />
+              <Typography color="text.secondary" sx={{ textAlign: 'right' }} variant="caption">
+                {activity.startedAt ? new Date(activity.startedAt).toLocaleString() : 'Date unavailable'}
+              </Typography>
             </Stack>
             <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 2.5 }}>
               {activity.distanceM !== undefined && (

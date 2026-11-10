@@ -25,6 +25,13 @@ All newly written or edited code comments must be in English, even when the
 surrounding discussion, task description, or private planning document is in
 another language.
 
+## Application version
+
+Increase the application version for every release. Use the smallest increment
+(the patch component) unless a different increment is requested. Keep
+`web/package.json` and `web/package-lock.json` in sync; the interface displays
+the version from `web/package.json`.
+
 ## Production deployment
 
 The root Dockerfile packages the dashboard, Go API, and migration executable.

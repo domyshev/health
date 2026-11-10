@@ -13,6 +13,7 @@ import {
 import { Link as RouterLink, useParams } from 'react-router-dom'
 
 import { useGetActivityQuery, type Activity } from '../../api/healthApi'
+import { ActivityIcon } from './ActivityIcon'
 
 function formatDuration(seconds: number) {
   const total = Math.round(seconds)
@@ -73,10 +74,10 @@ export function ActivityDetailsPage() {
     <Box component="section">
       <Button component={RouterLink} startIcon={<ArrowBackRounded />} to="/">Back to activities</Button>
       <Stack spacing={1} sx={{ mt: 3, mb: 3 }}>
+        <Box component="h1" sx={{ m: 0 }}><ActivityIcon activity={activity} detail /></Box>
         <Typography color="text.secondary">
           {activity.startedAt ? new Date(activity.startedAt).toLocaleString() : 'Date unavailable'}
         </Typography>
-        <Typography component="h1" variant="h2">{activity.name || activity.type}</Typography>
         <Typography color="text.secondary">
           {[activity.type.replace('_', ' '), activity.sourceType?.replaceAll('_', ' '), activity.swimEnvironment?.replace('_', ' ')].filter(Boolean).join(' · ')}
         </Typography>
