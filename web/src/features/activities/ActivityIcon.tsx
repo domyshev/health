@@ -37,7 +37,7 @@ export function ActivityIcon({ activity, detail = false }: { activity: Activity;
           </Box>
         ) : image ? (
           <Box alt="" component="img" src={image} sx={{ filter: 'brightness(0)', height: '100%', objectFit: 'contain', width: '100%' }} />
-        ) : activity.type === 'running' ? <DirectionsRunRounded aria-hidden="true" /> : activity.type === 'other' ? <MonitorHeartRounded aria-hidden="true" /> : <MoreHorizRounded aria-hidden="true" />}
+        ) : activity.type === 'running' ? <DirectionsRunRounded aria-hidden="true" /> : activity.type === 'cardio' ? <MonitorHeartRounded aria-hidden="true" /> : <MoreHorizRounded aria-hidden="true" />}
       </Box>
     </Tooltip>
   )

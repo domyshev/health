@@ -216,6 +216,20 @@ func TestActivityOwnershipAndOfflineRead(t *testing.T) {
 	if _, err := store.GetActivity(ctx, otherID, activityID); !errors.Is(err, health.ErrNotFound) {
 		t.Fatalf("foreign activity read error = %v", err)
 	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO activities (user_id, source, external_id, activity_type, name, started_at)
+		VALUES ($1, 'garmin', $2, 'cardio_training', 'Cardio', now()),
+		       ($1, 'garmin', $3, 'yoga', 'Yoga', now())`, ownerID, "cardio-"+unique, "other-"+unique); err != nil {
+		t.Fatal(err)
+	}
+	cardio, _, err := store.ListActivities(ctx, ownerID, "cardio", nil, 20)
+	if err != nil || len(cardio) != 1 || cardio[0].SourceType != "cardio_training" {
+		t.Fatalf("cardio filter: activities=%+v err=%v", cardio, err)
+	}
+	other, _, err := store.ListActivities(ctx, ownerID, "other", nil, 20)
+	if err != nil || len(other) != 1 || other[0].SourceType != "yoga" {
+		t.Fatalf("other filter: activities=%+v err=%v", other, err)
+	}
 	date := time.Date(2026, 9, 21, 0, 0, 0, 0, time.UTC)
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO daily_health (user_id, source, health_date, steps)

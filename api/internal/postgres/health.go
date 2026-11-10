@@ -56,6 +56,7 @@ const activityCTE = `
 				WHEN lower(COALESCE(a.activity_type, '')) LIKE '%cycl%' OR lower(COALESCE(a.activity_type, '')) LIKE '%bike%' THEN 'cycling'
 				WHEN lower(COALESCE(a.activity_type, '')) LIKE '%walk%' OR lower(COALESCE(a.activity_type, '')) LIKE '%hik%' THEN 'walking'
 				WHEN lower(COALESCE(a.activity_type, '')) LIKE '%strength%' THEN 'strength'
+				WHEN lower(COALESCE(a.activity_type, '')) LIKE '%cardio%' THEN 'cardio'
 				ELSE 'other'
 			END AS normalized_type,
 			s.environment,

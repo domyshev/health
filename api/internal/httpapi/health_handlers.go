@@ -333,7 +333,7 @@ func (s *Server) serviceUnavailable(w http.ResponseWriter, r *http.Request) {
 
 func validActivityTypeFilter(value string) bool {
 	switch value {
-	case "", "running", "cycling", "walking", "swimming", "strength", "other":
+	case "", "running", "cycling", "walking", "swimming", "strength", "cardio", "other":
 		return true
 	default:
 		return false

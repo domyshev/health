@@ -73,7 +73,7 @@ paths:
     get:
       operationId: listActivities
       parameters:
-        - {name: type, in: query, schema: {type: string, enum: [running, cycling, walking, swimming, strength, other]}}
+        - {name: type, in: query, schema: {type: string, enum: [running, cycling, walking, swimming, strength, cardio, other]}}
         - {name: cursor, in: query, schema: {type: string}}
         - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
@@ -220,7 +220,7 @@ components:
       required: [id, type]
       properties:
         id: {type: string, format: uuid}
-        type: {type: string, enum: [running, cycling, walking, swimming, strength, other]}
+        type: {type: string, enum: [running, cycling, walking, swimming, strength, cardio, other]}
         sourceType: {type: string}
         name: {type: string}
         startedAt: {type: string, format: date-time}

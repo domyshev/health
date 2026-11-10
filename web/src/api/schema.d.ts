@@ -305,7 +305,7 @@ export interface components {
             /** Format: uuid */
             id: string;
             /** @enum {string} */
-            type: "running" | "cycling" | "walking" | "swimming" | "strength" | "other";
+            type: "running" | "cycling" | "walking" | "swimming" | "strength" | "cardio" | "other";
             sourceType?: string;
             name?: string;
             /** Format: date-time */
@@ -670,7 +670,7 @@ export interface operations {
     listActivities: {
         parameters: {
             query?: {
-                type?: "running" | "cycling" | "walking" | "swimming" | "strength" | "other";
+                type?: "running" | "cycling" | "walking" | "swimming" | "strength" | "cardio" | "other";
                 cursor?: string;
                 limit?: number;
             };

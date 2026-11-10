@@ -28,7 +28,7 @@ import {
 import { setActivityType, type AppDispatch, type RootState } from '../../store'
 import { ActivityIcon } from './ActivityIcon'
 
-const activityTypes = ['all', 'running', 'cycling', 'walking', 'swimming', 'strength', 'other']
+const activityTypes = ['all', 'running', 'cycling', 'walking', 'swimming', 'strength', 'cardio', 'other']
 
 function duration(seconds: number) {
   const hours = Math.floor(seconds / 3600)

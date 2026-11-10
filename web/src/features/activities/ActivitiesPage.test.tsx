@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -94,6 +94,23 @@ describe('activities', () => {
 
     expect(await screen.findByRole('img', { name: 'Strength session' })).toBeInTheDocument()
     expect(screen.queryByText('—')).not.toBeInTheDocument()
+  })
+
+  it('shows separate icons for cardio and other activities', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({
+        items: [
+          { id: crypto.randomUUID(), type: 'cardio', name: 'Cardio training' },
+          { id: crypto.randomUUID(), type: 'other', name: 'Yoga' },
+        ],
+        nextCursor: '',
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    ))
+
+    render(<ActivitiesPage />, { wrapper: TestProviders })
+
+    expect(within(await screen.findByRole('img', { name: 'Cardio training' })).getByTestId('MonitorHeartRoundedIcon')).toBeInTheDocument()
+    expect(within(screen.getByRole('img', { name: 'Yoga' })).getByTestId('MoreHorizRoundedIcon')).toBeInTheDocument()
   })
 
   it('distinguishes an empty filter from an account with no activities', async () => {
