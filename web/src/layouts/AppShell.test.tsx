@@ -95,7 +95,7 @@ describe('protected application shell', () => {
     expect(screen.getByRole('dialog', { name: /about health hub/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /github.com\/domyshev\/health/i })).toHaveAttribute('href', 'https://github.com/domyshev/health')
     await user.click(screen.getByRole('button', { name: /close about/i }))
-    await user.click(screen.getByRole('button', { name: /^menu$/i }))
+    await user.click(await screen.findByRole('button', { name: /^menu$/i }))
     await user.click(screen.getByRole('menuitem', { name: /log out/i }))
 
     expect(await screen.findByText(/could not be completed/i)).toBeInTheDocument()
