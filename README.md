@@ -99,3 +99,10 @@ Run production migrations with `health-hub-migrate` before starting the new API
 and importer. Back up PostgreSQL and stop writers before applying migrations.
 A failed deployment must restore a matching database snapshot before reverting
 the images; an older executable alone cannot undo a schema migration.
+
+## iPhone application
+
+The dashboard is also packaged as a Capacitor iPhone application. It bundles the
+React interface locally and uses the existing server API and native session
+cookies. See [the iPhone guide](docs/ios.md) for simulator builds, device signing,
+API configuration, and verification limits.

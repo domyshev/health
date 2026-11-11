@@ -12,9 +12,18 @@
     "test:e2e": "playwright test",
     "generate:api": "openapi-typescript ../docs/openapi.yaml -o src/api/schema.d.ts",
     "check:api": "openapi-typescript ../docs/openapi.yaml -o .schema.generated.d.ts && cmp -s .schema.generated.d.ts src/api/schema.d.ts; code=$?; rm -f .schema.generated.d.ts; exit $code",
-    "check": "npm run check:api && npm run lint && npm run test && npm run build"
+    "check": "npm run check:api && npm run lint && npm run test && npm run build",
+    "ios:prepare": "node scripts/ios-prepare.mjs",
+    "ios:open": "cap open ios",
+    "ios:build": "node scripts/ios-build.mjs",
+    "ios:run": "node scripts/ios-run.mjs"
   },
   "dependencies": {
+    "@capacitor/browser": "8.0.5",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/keyboard": "8.0.6",
+    "@capacitor/status-bar": "8.0.4",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@mui/icons-material": "9.4.0",
@@ -28,6 +37,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.13.0",
+    "@capacitor/cli": "8.6.0",
     "@eslint/js": "9.39.5",
     "@playwright/test": "1.63.0",
     "@testing-library/dom": "10.4.2",

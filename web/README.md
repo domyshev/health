@@ -50,3 +50,10 @@ Serve `web/dist/` from the same HTTPS origin as the Go API. Requests to `/v1` an
 ## Theme status
 
 The MUI theme uses centralized **temporary semantic defaults**. No SportApp asset catalog, approved color table, or screenshots were available in the repository or workspace, so these values are not represented as the final SportApp palette. Replace only the tokens in `src/theme.ts` after a source of truth is supplied, then rerun contrast and responsive checks.
+
+## iPhone application
+
+Run `npm run ios:prepare`, `npm run ios:build`, and `npm run ios:run` to prepare,
+build, and launch the Capacitor app in a booted iPhone simulator. The API and
+Garmin importer remain server-side. See [the iPhone guide](../docs/ios.md) for
+configuration, signing, development API usage, and verification limits.

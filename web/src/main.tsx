@@ -6,8 +6,12 @@ import { BrowserRouter } from 'react-router-dom'
 import { CssBaseline, ThemeProvider } from '@mui/material'
 
 import { App } from './App'
+import { initializeNative } from './native'
+import './native.css'
 import { persistor, store } from './store'
 import { theme } from './theme'
+
+initializeNative()
 
 const root = document.getElementById('root')
 if (!root) throw new Error('Root element not found')

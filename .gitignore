@@ -33,3 +33,12 @@ web/.schema.generated.d.ts
 *.tcx
 *.pem
 *.key
+
+# Native generated assets and local Xcode state.
+web/ios/App/App/public/
+web/ios/App/App/capacitor.config.json
+web/ios/App/App/config.xml
+web/ios/DerivedData/
+**/xcuserdata/
+*.xcuserstate
+web/ios/App/CapApp-SPM/.build/

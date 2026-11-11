@@ -1,0 +1,23 @@
+html[data-platform='ios'] {
+  background: #0b1116;
+  -webkit-text-size-adjust: 100%;
+}
+html[data-platform='ios'] body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+html[data-platform='ios'] .MuiAppBar-root {
+  top: env(safe-area-inset-top);
+}
+html[data-platform='ios'] .MuiDrawer-paper {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+html[data-platform='ios'] .MuiDialog-container {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+html[data-platform='ios'] input {
+  font-size: max(16px, 1em);
+}

@@ -127,7 +127,8 @@ test('manual sync reaches completion and activity filter updates the cursor quer
 
   await page.goto('/')
   await page.getByRole('button', { name: 'Sync now' }).click()
-  await expect(page.getByText('Sync complete').first()).toBeVisible()
+  // The app polls active sync runs every ten seconds.
+  await expect(page.getByText('Sync complete').first()).toBeVisible({ timeout: 15_000 })
   await page.getByLabel('Activity type').click()
   await page.getByRole('option', { name: 'swimming' }).click()
   await expect.poll(() => filtered).toBe(true)
