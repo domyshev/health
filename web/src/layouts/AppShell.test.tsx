@@ -31,7 +31,7 @@ describe('protected application shell', () => {
           id: 'run-1',
           status: syncReads > 0 ? 'complete' : 'running',
           startedAt: '2026-09-21T13:00:00Z',
-          finishedAt: syncReads > 1 ? '2026-09-21T13:01:00Z' : undefined,
+          finishedAt: '2026-09-21T13:01:00Z',
           discoveredCount: 1,
           importedCount: syncReads > 1 ? 1 : 0,
           updatedCount: 0,
@@ -55,8 +55,13 @@ describe('protected application shell', () => {
 
     const syncButton = await screen.findByRole('button', { name: /sync now/i })
     await waitFor(() => expect(syncButton).toBeEnabled())
+    expect(screen.getAllByText(/Synced:/i)[0]).toHaveTextContent(new Date('2026-09-21T12:00:00Z').toLocaleString())
     await user.click(syncButton)
-    expect((await screen.findAllByText(/sync complete/i, {}, { timeout: 5000 })).length).toBeGreaterThan(0)
+    const finished = new Date('2026-09-21T13:01:00Z')
+    const zone = new Intl.DateTimeFormat('en-GB', { timeZoneName: 'short' }).formatToParts(finished).find((part) => part.type === 'timeZoneName')?.value
+    const updatedLabel = `Synced: ${finished.toLocaleString()} ${zone}`
+    const updated = await screen.findAllByText(updatedLabel, {}, { timeout: 5000 })
+    expect(updated[0]?.closest('.MuiChip-root')).toHaveClass('MuiChip-colorDefault')
     await waitFor(() => expect(activityReads).toBeGreaterThan(1))
     const readsAfterCompletion = syncReads
     await new Promise((resolve) => window.setTimeout(resolve, 1200))

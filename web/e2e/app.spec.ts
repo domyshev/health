@@ -118,7 +118,7 @@ test('manual sync reaches completion and activity filter updates the cursor quer
     if (url.pathname === '/v1/sync-runs/run-1') {
       syncReads += 1
       return fulfill(route, {
-        id: 'run-1', status: syncReads > 1 ? 'succeeded' : 'running', startedAt: '2026-09-21T13:00:00Z',
+        id: 'run-1', status: syncReads > 1 ? 'succeeded' : 'running', startedAt: '2026-09-21T13:00:00Z', finishedAt: '2026-09-21T13:01:00Z',
         discoveredCount: 1, importedCount: syncReads > 1 ? 1 : 0, updatedCount: 0, failedCount: 0,
       })
     }
@@ -128,7 +128,7 @@ test('manual sync reaches completion and activity filter updates the cursor quer
   await page.goto('/')
   await page.getByRole('button', { name: 'Sync now' }).click()
   // The app polls active sync runs every ten seconds.
-  await expect(page.getByText('Sync complete').first()).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByText('Synced:').first()).toBeVisible({ timeout: 15_000 })
   await page.getByLabel('Activity type').click()
   await page.getByRole('option', { name: 'swimming' }).click()
   await expect.poll(() => filtered).toBe(true)

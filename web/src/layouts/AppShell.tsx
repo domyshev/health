@@ -129,11 +129,16 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
     }
   }
 
+  const lastSyncedAt = syncComplete && currentRunKnown && syncRun?.finishedAt
+    ? syncRun.finishedAt
+    : connection?.lastSuccessfulSyncAt
+  const syncedDate = lastSyncedAt ? new Date(lastSyncedAt) : undefined
+  const syncedTime = syncedDate ? `${syncedDate.toLocaleString()} ${new Intl.DateTimeFormat('en-GB', {
+    timeZoneName: 'short',
+  }).formatToParts(syncedDate).find((part) => part.type === 'timeZoneName')?.value ?? ''}`.trim() : undefined
   const syncLabel = reconnectRequired
     ? 'Reconnect required'
-    : syncComplete
-      ? 'Sync complete'
-      : syncPartial
+    : syncPartial
         ? 'Sync partially complete'
         : syncRun?.status === 'failed'
         ? 'Sync failed'
@@ -141,8 +146,8 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
           ? 'Sync queued'
           : active
             ? 'Syncing'
-            : connection?.lastSuccessfulSyncAt
-              ? `Last sync ${new Date(connection.lastSuccessfulSyncAt).toLocaleString()}`
+            : syncedTime
+              ? `Synced: ${syncedTime}`
               : 'Never synced'
 
   return (
@@ -154,11 +159,11 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
             <Typography sx={{ fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health</Typography>
           </Stack>
           <Chip
-            color={syncRun?.status === 'failed' ? 'error' : reconnectRequired || syncPartial ? 'warning' : syncComplete ? 'success' : 'default'}
+            color={syncRun?.status === 'failed' ? 'error' : reconnectRequired || syncPartial ? 'warning' : 'default'}
             label={syncLabel}
             size="small"
             sx={{ display: { xs: 'none', md: 'inline-flex' } }}
-            title={connection?.lastSuccessfulSyncAt}
+            title={lastSyncedAt}
           />
           <Tooltip title={connected ? 'Sync now' : 'Connect Garmin before syncing'}>
             <span>
