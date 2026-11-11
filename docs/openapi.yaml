@@ -69,11 +69,37 @@ paths:
       responses:
         "200": {description: Current user, content: {application/json: {schema: {$ref: "#/components/schemas/User"}}}}
         "401": {$ref: "#/components/responses/Unauthenticated"}
+  /v1/activity-field-settings:
+    get:
+      operationId: getActivityFieldSettings
+      responses:
+        "200":
+          description: Field settings for the current user.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/ActivityFieldSetting"}}
+        "401": {$ref: "#/components/responses/Unauthenticated"}
+    post:
+      operationId: saveActivityFieldSetting
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/ActivityFieldSetting"}
+      responses:
+        "200": {description: Saved settings, content: {application/json: {schema: {$ref: "#/components/schemas/ActivityFieldSetting"}}}}
+        "400": {$ref: "#/components/responses/InvalidRequest"}
+        "401": {$ref: "#/components/responses/Unauthenticated"}
+        "403": {$ref: "#/components/responses/InvalidOrigin"}
   /v1/activities:
     get:
       operationId: listActivities
       parameters:
-        - {name: type, in: query, schema: {type: string, enum: [running, cycling, walking, swimming, strength, cardio, other]}}
+        - {name: type, in: query, schema: {type: string, enum: [running, cycling, walking, swimming, strength, cardio, elliptical, other]}}
         - {name: cursor, in: query, schema: {type: string}}
         - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 20}}
       responses:
@@ -188,6 +214,13 @@ components:
     Conflict: {description: Operation conflicts with current state, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
     ServiceUnavailable: {description: Service unavailable, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
   schemas:
+    ActivityFieldSetting:
+      type: object
+      required: [type, view, fields]
+      properties:
+        type: {type: string, enum: [running, cycling, walking, swimming, strength, cardio, elliptical, other]}
+        view: {type: string, enum: [list, detail]}
+        fields: {type: array, uniqueItems: true, items: {type: string, enum: [distanceM, durationS, movingDurationS, elapsedDurationS, caloriesKcal, averageHrBpm, maxHrBpm, swimEnvironment, poolLengthM, averagePacePer100mS, activeLengths, lapCount, totalStrokes, averageStrokesPerLength, averageSwolf]}}
     Status:
       type: object
       additionalProperties: false
@@ -220,7 +253,7 @@ components:
       required: [id, type]
       properties:
         id: {type: string, format: uuid}
-        type: {type: string, enum: [running, cycling, walking, swimming, strength, cardio, other]}
+        type: {type: string, enum: [running, cycling, walking, swimming, strength, cardio, elliptical, other]}
         sourceType: {type: string}
         name: {type: string}
         startedAt: {type: string, format: date-time}

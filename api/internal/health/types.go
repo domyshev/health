@@ -109,3 +109,14 @@ type Repository interface {
 	GetGarminConnection(context.Context, string) (GarminConnection, error)
 	GetSyncRun(context.Context, string, string) (SyncRun, error)
 }
+
+type ActivityFieldSetting struct {
+	Type   string   `json:"type"`
+	View   string   `json:"view"`
+	Fields []string `json:"fields"`
+}
+
+type ActivityFieldSettingsRepository interface {
+	GetActivityFieldSettings(context.Context, string) ([]ActivityFieldSetting, error)
+	SaveActivityFieldSetting(context.Context, string, ActivityFieldSetting) error
+}

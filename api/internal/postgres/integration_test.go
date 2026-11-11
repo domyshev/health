@@ -216,10 +216,27 @@ func TestActivityOwnershipAndOfflineRead(t *testing.T) {
 	if _, err := store.GetActivity(ctx, otherID, activityID); !errors.Is(err, health.ErrNotFound) {
 		t.Fatalf("foreign activity read error = %v", err)
 	}
+	for _, setting := range []health.ActivityFieldSetting{
+		{Type: "cardio", View: "list", Fields: []string{"durationS"}},
+		{Type: "cardio", View: "detail", Fields: []string{"distanceM", "durationS"}},
+	} {
+		if err := store.SaveActivityFieldSetting(ctx, ownerID, setting); err != nil {
+			t.Fatal(err)
+		}
+	}
+	settings, err := store.GetActivityFieldSettings(ctx, ownerID)
+	if err != nil || len(settings) != 2 {
+		t.Fatalf("owner settings=%+v err=%v", settings, err)
+	}
+	foreignSettings, err := store.GetActivityFieldSettings(ctx, otherID)
+	if err != nil || len(foreignSettings) != 0 {
+		t.Fatalf("foreign settings=%+v err=%v", foreignSettings, err)
+	}
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO activities (user_id, source, external_id, activity_type, name, started_at)
 		VALUES ($1, 'garmin', $2, 'cardio_training', 'Cardio', now()),
-		       ($1, 'garmin', $3, 'yoga', 'Yoga', now())`, ownerID, "cardio-"+unique, "other-"+unique); err != nil {
+		       ($1, 'garmin', $3, 'yoga', 'Yoga', now()),
+		       ($1, 'garmin', $4, 'elliptical', 'Elliptical', now())`, ownerID, "cardio-"+unique, "other-"+unique, "elliptical-"+unique); err != nil {
 		t.Fatal(err)
 	}
 	cardio, _, err := store.ListActivities(ctx, ownerID, "cardio", nil, 20)
@@ -229,6 +246,10 @@ func TestActivityOwnershipAndOfflineRead(t *testing.T) {
 	other, _, err := store.ListActivities(ctx, ownerID, "other", nil, 20)
 	if err != nil || len(other) != 1 || other[0].SourceType != "yoga" {
 		t.Fatalf("other filter: activities=%+v err=%v", other, err)
+	}
+	elliptical, _, err := store.ListActivities(ctx, ownerID, "elliptical", nil, 20)
+	if err != nil || len(elliptical) != 1 || elliptical[0].SourceType != "elliptical" {
+		t.Fatalf("elliptical filter: activities=%+v err=%v", elliptical, err)
 	}
 	date := time.Date(2026, 9, 21, 0, 0, 0, 0, time.UTC)
 	if _, err := pool.Exec(ctx, `

@@ -28,7 +28,14 @@ export function ActivityIcon({ activity, detail = false }: { activity: Activity;
         tabIndex={detail ? 0 : undefined}
         sx={{ alignItems: 'center', backgroundColor: '#f3f4ef', borderRadius: 2.5, color: '#111', display: 'inline-flex', flexShrink: 0, height: detail ? 54 : 42, justifyContent: 'center', p: 0.75, verticalAlign: 'middle', width: detail ? 72 : 56 }}
       >
-        {activity.type === 'cycling' ? (
+        {activity.type === 'elliptical' ? (
+          <Box aria-hidden="true" component="svg" viewBox="0 0 64 48" sx={{ height: '100%', width: '100%' }}>
+            <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
+              <circle cx="32" cy="6" r="3" fill="currentColor" /><path d="m31 11-5 10 10 5 5 9m-11-22 8 6 6-4m-17 7-7 12m-4-9 8 15M14 40h36M25 40l10-5 10 5M46 10l4 30M14 21l3 19" />
+              <ellipse cx="39" cy="40" rx="13" ry="4" />
+            </g>
+          </Box>
+        ) : activity.type === 'cycling' ? (
           <Box aria-hidden="true" component="svg" viewBox="0 0 80 48" sx={{ height: '100%', width: '100%' }}>
             <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4">
               <circle cx="17" cy="34" r="11" /><circle cx="63" cy="34" r="11" />

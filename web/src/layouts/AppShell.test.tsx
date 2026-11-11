@@ -92,7 +92,7 @@ describe('protected application shell', () => {
     await user.click(await screen.findByRole('button', { name: /^menu$/i }))
     expect(screen.getByText('runner@example.com')).toBeInTheDocument()
     await user.click(screen.getByRole('menuitem', { name: /about/i }))
-    expect(screen.getByRole('dialog', { name: /about health hub/i })).toBeInTheDocument()
+    expect(screen.getByRole('dialog', { name: /about health/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /github.com\/domyshev\/health/i })).toHaveAttribute('href', 'https://github.com/domyshev/health')
     await user.click(screen.getByRole('button', { name: /close about/i }))
     await user.click(await screen.findByRole('button', { name: /^menu$/i }))

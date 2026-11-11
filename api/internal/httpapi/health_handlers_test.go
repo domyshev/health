@@ -19,6 +19,50 @@ type fakeHealthRepository struct {
 	activities      []health.Activity
 	connection      health.GarminConnection
 	run             health.SyncRun
+	fieldSettings   []health.ActivityFieldSetting
+}
+
+func (f *fakeHealthRepository) GetActivityFieldSettings(_ context.Context, userID string) ([]health.ActivityFieldSetting, error) {
+	f.requestedUserID = userID
+	return f.fieldSettings, nil
+}
+
+func (f *fakeHealthRepository) SaveActivityFieldSetting(_ context.Context, userID string, setting health.ActivityFieldSetting) error {
+	f.requestedUserID = userID
+	f.fieldSettings = []health.ActivityFieldSetting{setting}
+	return nil
+}
+
+func TestActivityFieldSettingsAreAuthenticatedAndValidated(t *testing.T) {
+	repo := &fakeHealthRepository{}
+	handler := authenticatedServer(repo, &fakeImporterClient{})
+	for _, tc := range []struct {
+		body   string
+		origin string
+		want   int
+	}{
+		{`{"type":"cardio","view":"list","fields":["durationS"]}`, "", http.StatusForbidden},
+		{`{"type":"cardio","view":"list","fields":["unknown"]}`, "https://health.example", http.StatusBadRequest},
+		{`{"type":"cardio","view":"list","fields":["durationS","durationS"]}`, "https://health.example", http.StatusBadRequest},
+		{`{"type":"elliptical","view":"detail","fields":[]}`, "https://health.example", http.StatusOK},
+	} {
+		request := authenticatedRequest(http.MethodPost, "/v1/activity-field-settings", strings.NewReader(tc.body))
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("Origin", tc.origin)
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != tc.want {
+			t.Fatalf("body=%s status=%d want=%d", tc.body, response.Code, tc.want)
+		}
+	}
+	if repo.requestedUserID != "owner-id" || repo.fieldSettings[0].Type != "elliptical" {
+		t.Fatalf("incorrect setting: %+v", repo)
+	}
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, authenticatedRequest(http.MethodGet, "/v1/activity-field-settings", nil))
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), `"fields":[]`) {
+		t.Fatalf("get: %s", response.Body.String())
+	}
 }
 
 func (f *fakeHealthRepository) ListActivities(_ context.Context, userID, _ string, _ *health.ActivityCursor, _ int) ([]health.Activity, *health.ActivityCursor, error) {

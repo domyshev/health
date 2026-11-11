@@ -139,7 +139,7 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
 
         {connectionError && (
           <Alert action={<Button onClick={() => void refetch()}>Retry</Button>} severity="error">
-            Garmin status could not be loaded. Existing Health Hub data is unaffected.
+            Garmin status could not be loaded. Existing Health data is unaffected.
           </Alert>
         )}
         {isLoading ? <CircularProgress aria-label="Loading Garmin status" /> : !connectionError && (
@@ -232,7 +232,7 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
             <Stack spacing={2}>
               <Typography sx={{ fontWeight: 700 }}>{displayConnected ? 'Refresh access' : 'Connect Garmin'}</Typography>
               <Typography color="text.secondary" variant="body2">
-                Credentials are sent once to the Health Hub API and are never saved by this web app.
+                Credentials are sent once to the Health API and are never saved by this web app.
               </Typography>
               <TextField
                 autoComplete="username"

@@ -24,10 +24,10 @@ func (s *ResendSender) SendLoginCode(ctx context.Context, recipient, code string
 	_, err := s.client.Emails.SendWithContext(ctx, &resend.SendEmailRequest{
 		From:    s.from,
 		To:      []string{recipient},
-		Subject: "Your Health Hub login code",
-		Text:    fmt.Sprintf("Your Health Hub login code is %s. It expires in %d minutes.", code, minutes),
+		Subject: "Your Health login code",
+		Text:    fmt.Sprintf("Your Health login code is %s. It expires in %d minutes.", code, minutes),
 		Html: fmt.Sprintf(
-			"<p>Your Health Hub login code is <strong>%s</strong>.</p><p>It expires in %d minutes.</p>",
+			"<p>Your Health login code is <strong>%s</strong>.</p><p>It expires in %d minutes.</p>",
 			html.EscapeString(code), minutes,
 		),
 	})

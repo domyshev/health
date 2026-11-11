@@ -5,8 +5,10 @@ import GarminIcon from '@mui/icons-material/WatchRounded'
 import LogoutRounded from '@mui/icons-material/LogoutRounded'
 import MenuRounded from '@mui/icons-material/MenuRounded'
 import InfoOutlined from '@mui/icons-material/InfoOutlined'
-import MonitorHeartRounded from '@mui/icons-material/MonitorHeartRounded'
 import CloseRounded from '@mui/icons-material/CloseRounded'
+import LightModeRounded from '@mui/icons-material/LightModeRounded'
+import DarkModeRounded from '@mui/icons-material/DarkModeRounded'
+import BrightnessAutoRounded from '@mui/icons-material/BrightnessAutoRounded'
 import SyncRounded from '@mui/icons-material/SyncRounded'
 import {
   Alert,
@@ -24,6 +26,8 @@ import {
   Menu,
   MenuItem,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Toolbar,
   Tooltip,
   Typography,
@@ -43,6 +47,8 @@ import { GarminDrawer } from '../features/garmin/GarminDrawer'
 import type { AppDispatch } from '../store'
 import { resetUiState } from '../store'
 import { version } from '../../package.json'
+import { useThemeMode } from '../ThemeMode'
+import appLogo from '../assets/health-logo.png'
 
 interface AppShellProps {
   user: User
@@ -61,6 +67,7 @@ function useDocumentVisible() {
 
 export function AppShell({ user, onLoggedOut }: AppShellProps) {
   const dispatch = useDispatch<AppDispatch>()
+  const { mode, setMode } = useThemeMode()
   const completedRunRef = useRef<string | undefined>(undefined)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
@@ -142,9 +149,10 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
     <Box sx={{ minHeight: '100dvh' }}>
       <AppBar color="transparent" elevation={0} position="sticky" sx={{ backdropFilter: 'blur(18px)', borderBottom: '1px solid', borderColor: 'divider' }}>
         <Toolbar sx={{ gap: { xs: 0.25, sm: 1.25 }, px: { xs: 1, sm: 3 } }}>
-          <Typography sx={{ flexGrow: 1, fontWeight: 850, letterSpacing: '-0.03em', display: { xs: 'none', sm: 'block' } }} variant="h6">Health Hub</Typography>
-          <Box sx={{ display: { xs: 'block', sm: 'none' }, flexGrow: 1 }}><MonitorHeartRounded color="primary" aria-label="Health Hub" /></Box>
-          <Typography color="text.secondary" variant="body2" sx={{ left: '50%', position: 'absolute', transform: 'translateX(-50%)', pointerEvents: 'none' }}>v{version}</Typography>
+          <Stack direction="row" spacing={1} sx={{ flexGrow: 1, alignItems: 'center' }}>
+            <Box component="img" src={appLogo} alt="" sx={{ width: 36, height: 36, borderRadius: 1.5 }} />
+            <Typography sx={{ fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health</Typography>
+          </Stack>
           <Chip
             color={syncRun?.status === 'failed' ? 'error' : reconnectRequired || syncPartial ? 'warning' : syncComplete ? 'success' : 'default'}
             label={syncLabel}
@@ -170,6 +178,14 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
             <IconButton aria-label="Menu" aria-haspopup="menu" aria-expanded={Boolean(menuAnchor)} onClick={(event) => setMenuAnchor(event.currentTarget)}><MenuRounded /></IconButton>
           </Tooltip>
           <Menu anchorEl={menuAnchor} onClose={() => setMenuAnchor(null)} open={Boolean(menuAnchor)} slotProps={{ paper: { sx: { minWidth: 250, mt: 1 } } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1 }}>
+              <Typography color="text.secondary" variant="body2">Theme</Typography>
+              <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_event, value: 'light' | 'system' | 'dark' | null) => { if (value) setMode(value) }} aria-label="Theme">
+                <ToggleButton value="light" aria-label="Light theme"><LightModeRounded fontSize="small" /></ToggleButton>
+                <ToggleButton value="system" aria-label="System theme"><BrightnessAutoRounded fontSize="small" /></ToggleButton>
+                <ToggleButton value="dark" aria-label="Dark theme"><DarkModeRounded fontSize="small" /></ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
             <MenuItem onClick={() => { setMenuAnchor(null); setAboutOpen(true) }}>
               <ListItemIcon><InfoOutlined /></ListItemIcon><ListItemText>About…</ListItemText>
               <Typography color="text.secondary" variant="body2">{version}</Typography>
@@ -182,10 +198,10 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
       </AppBar>
 
       <Dialog fullWidth maxWidth="xs" onClose={() => setAboutOpen(false)} open={aboutOpen}>
-        <DialogTitle>About Health Hub<IconButton aria-label="Close about" onClick={() => setAboutOpen(false)} sx={{ position: 'absolute', right: 12, top: 12 }}><CloseRounded /></IconButton></DialogTitle>
+        <DialogTitle>About Health<IconButton aria-label="Close about" onClick={() => setAboutOpen(false)} sx={{ position: 'absolute', right: 12, top: 12 }}><CloseRounded /></IconButton></DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
-            <MonitorHeartRounded color="primary" sx={{ fontSize: 48 }} aria-label="Health Hub logo" />
+            <Box component="img" src={appLogo} alt="Health logo" sx={{ width: 56, height: 56, borderRadius: 2 }} />
             <Typography color="text.secondary">Your activities and health data in one place.</Typography>
             <Typography>Version: {version}</Typography>
             <Typography>Author: <Link href="https://github.com/domyshev" target="_blank" rel="noopener noreferrer">domyshev</Link></Typography>

@@ -1,6 +1,6 @@
 {
   "appId": "com.domyshev.health",
-  "appName": "Health Hub",
+  "appName": "Health",
   "webDir": "dist",
   "ios": {
     "contentInset": "never",

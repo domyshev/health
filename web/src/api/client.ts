@@ -37,7 +37,7 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
     }
     const url = new URL(path, config.base)
     if (url.origin !== config.base || !url.pathname.startsWith('/v1/')) {
-      throw new Error('Native requests must target the configured Health Hub API.')
+      throw new Error('Native requests must target the configured Health API.')
     }
     if (init.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     // URLSession owns session cookies; never copy authentication data to browser storage.

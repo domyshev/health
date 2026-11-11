@@ -1,17 +1,18 @@
 import { createTheme } from '@mui/material/styles'
 
 // Temporary semantic defaults. Replace values after the SportApp source palette is supplied.
-export const theme = createTheme({
+export function createAppTheme(mode: 'light' | 'dark') {
+return createTheme({
   cssVariables: true,
   palette: {
-    mode: 'dark',
-    primary: { main: '#7ee787' },
-    secondary: { main: '#79c0ff' },
-    background: { default: '#0b1116', paper: '#111922' },
+    mode,
+    primary: { main: mode === 'dark' ? '#7ee787' : '#196b37' },
+    secondary: { main: mode === 'dark' ? '#79c0ff' : '#125e9e' },
+    background: mode === 'dark' ? { default: '#0b1116', paper: '#111922' } : { default: '#f5f7f5', paper: '#ffffff' },
     error: { main: '#ff7b72' },
     warning: { main: '#e3b341' },
     success: { main: '#7ee787' },
-    text: { primary: '#f0f6fc', secondary: '#9ba7b4' },
+    text: mode === 'dark' ? { primary: '#f0f6fc', secondary: '#9ba7b4' } : { primary: '#17221b', secondary: '#53645a' },
   },
   shape: { borderRadius: 14 },
   typography: {
@@ -31,10 +32,14 @@ export const theme = createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          border: '1px solid rgba(240, 246, 252, 0.09)',
+          border: mode === 'dark' ? '1px solid rgba(240, 246, 252, 0.09)' : '1px solid rgba(20, 50, 30, 0.14)',
           backgroundImage: 'none',
         },
       },
     },
   },
 })
+
+}
+
+export const theme = createAppTheme('dark')

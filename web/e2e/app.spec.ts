@@ -150,3 +150,49 @@ test('login and dashboard pass automated accessibility checks', async ({ page })
   const dashboardResults = await new AxeBuilder({ page }).analyze()
   expect(dashboardResults.violations).toEqual([])
 })
+
+test('cardio field choices remain separate in list and detail views', async ({ page }) => {
+  await mockBaseApi(page)
+  const activity = { id: '11111111-1111-4111-8111-111111111111', type: 'cardio', name: 'Cardio session', startedAt: '2026-09-21T13:00:00Z', distanceM: 1200, durationS: 1800 }
+  const settings: { type: string; view: string; fields: string[] }[] = []
+  await page.route('**/v1/activities**', async (route) => {
+    const url = new URL(route.request().url())
+    await fulfill(route, url.pathname === '/v1/activities' ? { items: [activity], nextCursor: '' } : activity)
+  })
+  await page.route('**/v1/activity-field-settings', async (route) => {
+    if (route.request().method() === 'POST') {
+      const value = route.request().postDataJSON() as { type: string; view: string; fields: string[] }
+      const index = settings.findIndex((item) => item.type === value.type && item.view === value.view)
+      if (index >= 0) settings[index] = value
+      else settings.push(value)
+      await fulfill(route, value)
+    } else await fulfill(route, { items: settings })
+  })
+  await page.goto('/')
+  const card = page.getByRole('link', { name: /cardio session/i })
+  await expect(card).toBeVisible()
+  await expect(card.getByText('1.20 km')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Choose list fields for cardio' }).click()
+  await page.getByRole('checkbox', { name: 'Distance' }).check()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await expect(card.getByText('1.20 km')).toBeVisible()
+  await card.click()
+  await expect(page.getByRole('heading', { name: 'Cardio session' })).toBeVisible()
+  await expect(page.getByText('1.20 km')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Choose detail fields for cardio' }).click()
+  await expect(page.getByRole('checkbox', { name: 'Distance' })).not.toBeChecked()
+  await page.getByRole('button', { name: 'Done' }).click()
+  await page.getByRole('link', { name: /back to activities/i }).click()
+  await expect(page.getByRole('link', { name: /cardio session/i }).getByText('1.20 km')).toBeVisible()
+})
+
+test('theme choice persists after reload', async ({ page }) => {
+  await mockBaseApi(page)
+  await page.goto('/')
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await page.getByRole('button', { name: 'Light theme' }).click()
+  await expect(page.getByRole('button', { name: 'Light theme' })).toHaveAttribute('aria-pressed', 'true')
+  await page.reload()
+  await page.getByRole('button', { name: 'Menu' }).click()
+  await expect(page.getByRole('button', { name: 'Light theme' })).toHaveAttribute('aria-pressed', 'true')
+})

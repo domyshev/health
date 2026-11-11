@@ -26,7 +26,7 @@ export function App() {
     return (
       <Box component="main" sx={{ minHeight: '100dvh', display: 'grid', placeItems: 'center', p: 2 }}>
         <Alert action={<Button onClick={() => void refetch()}>Retry</Button>} severity="error">
-          Health Hub is temporarily unavailable. Your session has not been changed.
+          Health is temporarily unavailable. Your session has not been changed.
         </Alert>
       </Box>
     )

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link as RouterLink } from 'react-router-dom'
 import AccessTimeRounded from '@mui/icons-material/AccessTimeRounded'
@@ -27,68 +27,44 @@ import {
 } from '../../api/healthApi'
 import { setActivityType, type AppDispatch, type RootState } from '../../store'
 import { ActivityIcon } from './ActivityIcon'
+import { ActivityFieldSettings, useActivityFields } from './ActivityFieldSettings'
+import { fieldLabels, fieldValue, type Field } from './activityFields'
 
-const activityTypes = ['all', 'running', 'cycling', 'walking', 'swimming', 'strength', 'cardio', 'other']
-
-function duration(seconds: number) {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  return hours ? `${hours}h ${minutes}m` : `${minutes} min`
-}
-
-function distance(metres: number) {
-  return `${(metres / 1000).toFixed(2)} km`
-}
-
-function pace(seconds?: number) {
-  if (seconds === undefined) return undefined
-  const minutes = Math.floor(seconds / 60)
-  return `${minutes}:${String(Math.round(seconds % 60)).padStart(2, '0')} /100m`
-}
+const activityTypes = ['all', 'running', 'cycling', 'walking', 'swimming', 'strength', 'cardio', 'elliptical', 'other']
 
 function ActivityCard({ activity }: { activity: Activity }) {
+  const { fields } = useActivityFields(activity.type, 'list')
+  const icons: Partial<Record<Field, ReactNode>> = {
+    distanceM: <StraightenRounded color="action" fontSize="small" />,
+    durationS: <AccessTimeRounded color="action" fontSize="small" />,
+    averageHrBpm: <FavoriteRounded color="error" fontSize="small" />,
+    caloriesKcal: <LocalFireDepartmentRounded color="warning" fontSize="small" />,
+  }
   return (
-    <Card sx={{ height: '100%', borderRadius: '16px' }}>
+    <Card sx={{ height: '100%', borderRadius: '16px', position: 'relative' }}>
+      <Box sx={{ position: 'absolute', right: 12, top: 12, zIndex: 1 }}><ActivityFieldSettings type={activity.type} view="list" /></Box>
       <CardActionArea component={RouterLink} sx={{ height: '100%', p: 0.5 }} to={`/activities/${activity.id}`}>
         <CardContent>
           <Stack spacing={2}>
-            <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start', justifyContent: 'space-between', pr: 5 }}>
               <ActivityIcon activity={activity} />
               <Typography color="text.secondary" sx={{ textAlign: 'right' }} variant="caption">
                 {activity.startedAt ? new Date(activity.startedAt).toLocaleString() : 'Date unavailable'}
               </Typography>
             </Stack>
             <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 2.5 }}>
-              {activity.distanceM !== undefined && (
-                <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
-                  <StraightenRounded color="action" fontSize="small" />
-                  <Typography>{distance(activity.distanceM)}</Typography>
+              {fields.map((field) => {
+                if (activity.type === 'swimming' && (field === 'averagePacePer100mS' || field === 'swimEnvironment')) return null
+                const value = fieldValue(activity, field)
+                return value === undefined ? null : <Stack key={field} direction="row" spacing={0.75} sx={{ alignItems: 'center' }} title={fieldLabels[field]}>
+                  {icons[field] ?? <Typography color="text.secondary" variant="caption">{fieldLabels[field]}:</Typography>}
+                  <Typography>{value}</Typography>
                 </Stack>
-              )}
-              {activity.durationS !== undefined && (
-                <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
-                  <AccessTimeRounded color="action" fontSize="small" />
-                  <Typography>{duration(activity.durationS)}</Typography>
-                </Stack>
-              )}
-              {activity.averageHrBpm !== undefined && (
-                <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
-                  <FavoriteRounded color="error" fontSize="small" />
-                  <Typography>{Math.round(activity.averageHrBpm)} bpm</Typography>
-                </Stack>
-              )}
-              {activity.caloriesKcal !== undefined && (
-                <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
-                  <LocalFireDepartmentRounded color="warning" fontSize="small" />
-                  <Typography>{Math.round(activity.caloriesKcal)} kcal</Typography>
-                </Stack>
-              )}
+              })}
             </Stack>
-            {activity.type === 'swimming' && (activity.swimEnvironment || activity.averagePacePer100mS !== undefined) && (
-              <Typography color="text.secondary" variant="body2">
-                {[activity.swimEnvironment?.replace('_', ' '), pace(activity.averagePacePer100mS)].filter(Boolean).join(' · ')}
-              </Typography>
-            )}
+            {activity.type === 'swimming' && ((fields.includes('swimEnvironment') && activity.swimEnvironment) || (fields.includes('averagePacePer100mS') && activity.averagePacePer100mS !== undefined)) && <Typography color="text.secondary" variant="body2">
+              {[fields.includes('swimEnvironment') ? fieldValue(activity, 'swimEnvironment') : undefined, fields.includes('averagePacePer100mS') ? fieldValue(activity, 'averagePacePer100mS') : undefined].filter(Boolean).join(' · ')}
+            </Typography>}
           </Stack>
         </CardContent>
       </CardActionArea>

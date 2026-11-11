@@ -68,7 +68,7 @@ export function LoginPage() {
           <Stack spacing={3}>
             <Box>
               <Typography color="primary" sx={{ fontWeight: 800, letterSpacing: '0.08em' }} variant="overline">
-                Health Hub
+                Health
               </Typography>
               <Typography component="h1" variant="h2">Your training, privately organized.</Typography>
               <Typography color="text.secondary" sx={{ mt: 1 }}>

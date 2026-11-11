@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestLoadUsesHealthHubSenderName(t *testing.T) {
+func TestLoadUsesHealthSenderName(t *testing.T) {
 	t.Setenv("HEALTH_HUB_DATABASE_URL", "postgresql://db/health")
 	t.Setenv("AUTH_SECRET", "01234567890123456789012345678901")
 	t.Setenv("AUTH_ALLOWED_EMAILS", "user@example.com")
@@ -18,7 +18,7 @@ func TestLoadUsesHealthHubSenderName(t *testing.T) {
 		t.Fatal(err)
 	}
 	from, err := mail.ParseAddress(cfg.EmailFrom)
-	if err != nil || from.Name != "Health Hub" || from.Address != "login@example.com" {
+	if err != nil || from.Name != "Health" || from.Address != "login@example.com" {
 		t.Fatalf("unexpected sender: %q (%v)", cfg.EmailFrom, err)
 	}
 }
@@ -78,7 +78,7 @@ func TestLoadRejectsInsecureProductionCookie(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
 	t.Setenv("EMAIL_MODE", "resend")
 	t.Setenv("RESEND_API_KEY", "resend-key")
-	t.Setenv("EMAIL_FROM", "Health Hub <login@example.com>")
+	t.Setenv("EMAIL_FROM", "Health <login@example.com>")
 	t.Setenv("COOKIE_SECURE", "false")
 	t.Setenv("APP_ORIGINS", "https://health.example")
 	t.Setenv("IMPORTER_BASE_URL", "http://importer:8081")
@@ -96,7 +96,7 @@ func TestLoadRejectsUnsafeOriginAndShortProductionControlSecret(t *testing.T) {
 	t.Setenv("APP_ENV", "production")
 	t.Setenv("EMAIL_MODE", "resend")
 	t.Setenv("RESEND_API_KEY", "resend-key")
-	t.Setenv("EMAIL_FROM", "Health Hub <login@example.com>")
+	t.Setenv("EMAIL_FROM", "Health <login@example.com>")
 	t.Setenv("COOKIE_SECURE", "true")
 	t.Setenv("APP_ORIGINS", "javascript://health.example")
 	t.Setenv("IMPORTER_BASE_URL", "http://127.0.0.1:8081")

@@ -13,6 +13,7 @@ export type ActivityPage = Schemas['ActivityPage']
 export type GarminConnection = Schemas['GarminConnection']
 export type GarminConnectResult = Schemas['GarminConnectResult']
 export type SyncRun = Schemas['SyncRun']
+export type ActivityFieldSetting = Schemas['ActivityFieldSetting']
 
 type QueryArgs = {
   url: string
@@ -44,7 +45,7 @@ const baseQuery: BaseQueryFn<QueryArgs, unknown, QueryError> = async ({ url, met
     return {
       error: {
         status: 0,
-        data: { code: 'network_error', message: 'Unable to reach Health Hub.' },
+        data: { code: 'network_error', message: 'Unable to reach Health.' },
       },
     }
   }
@@ -53,7 +54,7 @@ const baseQuery: BaseQueryFn<QueryArgs, unknown, QueryError> = async ({ url, met
 export const healthApi = createApi({
   reducerPath: 'healthApi',
   baseQuery,
-  tagTypes: ['Session', 'Activities', 'Garmin', 'Sync'],
+  tagTypes: ['Session', 'Activities', 'Garmin', 'Sync', 'ActivityFieldSettings'],
   endpoints: (builder) => ({
     getMe: builder.query<User, void>({
       query: () => ({ url: '/v1/me' }),
@@ -77,6 +78,27 @@ export const healthApi = createApi({
     getActivity: builder.query<Activity, string>({
       query: (id) => ({ url: `/v1/activities/${encodeURIComponent(id)}` }),
       providesTags: ['Activities'],
+    }),
+    getActivityFieldSettings: builder.query<ActivityFieldSetting[], void>({
+      query: () => ({ url: '/v1/activity-field-settings' }),
+      transformResponse: (response: { items: ActivityFieldSetting[] }) => response.items,
+      providesTags: ['ActivityFieldSettings'],
+    }),
+    saveActivityFieldSetting: builder.mutation<ActivityFieldSetting, ActivityFieldSetting>({
+      query: (body) => ({ url: '/v1/activity-field-settings', method: 'POST', body }),
+      async onQueryStarted(setting, { dispatch, queryFulfilled }) {
+        const update = dispatch(healthApi.util.updateQueryData('getActivityFieldSettings', undefined, (items) => {
+          const index = items.findIndex((item) => item.type === setting.type && item.view === setting.view)
+          if (index < 0) items.push(setting)
+          else items[index] = setting
+        }))
+        try {
+          await queryFulfilled
+        } catch {
+          update.undo()
+        }
+      },
+      invalidatesTags: (_result, error) => error ? [] : ['ActivityFieldSettings'],
     }),
     getGarminConnection: builder.query<GarminConnection, void>({
       query: () => ({ url: '/v1/integrations/garmin' }),
@@ -111,6 +133,7 @@ export const healthApi = createApi({
 export const {
   useConnectGarminMutation,
   useGetActivityQuery,
+  useGetActivityFieldSettingsQuery,
   useGetActivitiesQuery,
   useGetGarminConnectionQuery,
   useGetMeQuery,
@@ -118,6 +141,7 @@ export const {
   useLazyGetActivitiesQuery,
   useLogoutMutation,
   useRequestCodeMutation,
+  useSaveActivityFieldSettingMutation,
   useStartSyncMutation,
   useVerifyCodeMutation,
   useVerifyGarminMfaMutation,

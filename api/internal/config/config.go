@@ -110,7 +110,7 @@ func Load() (Config, error) {
 		if err != nil {
 			return Config{}, errors.New("EMAIL_FROM must be a valid email address")
 		}
-		cfg.EmailFrom = (&mail.Address{Name: "Health Hub", Address: from.Address}).String()
+		cfg.EmailFrom = (&mail.Address{Name: "Health", Address: from.Address}).String()
 	}
 	if cfg.Environment == "production" && cfg.DevelopmentLoginCode != "" {
 		return Config{}, errors.New("DEV_LOGIN_CODE is forbidden in production")

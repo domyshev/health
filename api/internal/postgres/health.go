@@ -52,6 +52,7 @@ const activityCTE = `
 			COALESCE(a.started_at, 'epoch'::timestamptz) AS sort_started_at,
 			CASE
 				WHEN a.activity_type IN ('lap_swimming', 'open_water_swimming') THEN 'swimming'
+				WHEN lower(COALESCE(a.activity_type, '')) LIKE '%elliptical%' THEN 'elliptical'
 				WHEN lower(COALESCE(a.activity_type, '')) LIKE '%run%' THEN 'running'
 				WHEN lower(COALESCE(a.activity_type, '')) LIKE '%cycl%' OR lower(COALESCE(a.activity_type, '')) LIKE '%bike%' THEN 'cycling'
 				WHEN lower(COALESCE(a.activity_type, '')) LIKE '%walk%' OR lower(COALESCE(a.activity_type, '')) LIKE '%hik%' THEN 'walking'

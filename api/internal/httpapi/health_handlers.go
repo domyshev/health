@@ -15,6 +15,8 @@ import (
 )
 
 func (s *Server) registerHealthRoutes(mux *http.ServeMux) {
+	mux.Handle("GET /v1/activity-field-settings", s.requireAuth(http.HandlerFunc(s.handleGetActivityFieldSettings)))
+	mux.Handle("POST /v1/activity-field-settings", s.requireAuth(http.HandlerFunc(s.handleSaveActivityFieldSettings)))
 	mux.Handle("GET /v1/activities", s.requireAuth(http.HandlerFunc(s.handleListActivities)))
 	mux.Handle("GET /v1/activities/{activityId}", s.requireAuth(http.HandlerFunc(s.handleGetActivity)))
 	mux.Handle("GET /v1/activities/{activityId}/laps", s.requireAuth(http.HandlerFunc(s.handleListSwimLaps)))
@@ -26,6 +28,53 @@ func (s *Server) registerHealthRoutes(mux *http.ServeMux) {
 	mux.Handle("POST /v1/integrations/garmin/challenges/{challengeId}/verify", s.requireAuth(http.HandlerFunc(s.handleVerifyGarminMFA)))
 	mux.Handle("POST /v1/sync-runs", s.requireAuth(http.HandlerFunc(s.handleStartSync)))
 	mux.Handle("GET /v1/sync-runs/{syncRunId}", s.requireAuth(http.HandlerFunc(s.handleGetSyncRun)))
+}
+
+func (s *Server) handleGetActivityFieldSettings(w http.ResponseWriter, r *http.Request) {
+	repo, ok := s.health.(health.ActivityFieldSettingsRepository)
+	if !ok {
+		s.serviceUnavailable(w, r)
+		return
+	}
+	items, err := repo.GetActivityFieldSettings(r.Context(), userFromContext(r.Context()).ID)
+	if err != nil {
+		s.serviceUnavailable(w, r)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": items})
+}
+
+func (s *Server) handleSaveActivityFieldSettings(w http.ResponseWriter, r *http.Request) {
+	if !s.requireAllowedOrigin(w, r) {
+		return
+	}
+	repo, ok := s.health.(health.ActivityFieldSettingsRepository)
+	if !ok {
+		s.serviceUnavailable(w, r)
+		return
+	}
+	var setting health.ActivityFieldSetting
+	if !s.decodeJSON(w, r, &setting) {
+		return
+	}
+	if setting.Type == "" || !validActivityTypeFilter(setting.Type) || (setting.View != "list" && setting.View != "detail") || setting.Fields == nil {
+		s.writeError(w, r, http.StatusBadRequest, "invalid_request", "Invalid activity field settings")
+		return
+	}
+	allowed := map[string]bool{"distanceM": true, "durationS": true, "movingDurationS": true, "elapsedDurationS": true, "caloriesKcal": true, "averageHrBpm": true, "maxHrBpm": true, "swimEnvironment": true, "poolLengthM": true, "averagePacePer100mS": true, "activeLengths": true, "lapCount": true, "totalStrokes": true, "averageStrokesPerLength": true, "averageSwolf": true}
+	seen := make(map[string]bool)
+	for _, field := range setting.Fields {
+		if !allowed[field] || seen[field] {
+			s.writeError(w, r, http.StatusBadRequest, "invalid_request", "Invalid activity field")
+			return
+		}
+		seen[field] = true
+	}
+	if err := repo.SaveActivityFieldSetting(r.Context(), userFromContext(r.Context()).ID, setting); err != nil {
+		s.serviceUnavailable(w, r)
+		return
+	}
+	writeJSON(w, http.StatusOK, setting)
 }
 
 func (s *Server) handleListActivities(w http.ResponseWriter, r *http.Request) {
@@ -333,7 +382,7 @@ func (s *Server) serviceUnavailable(w http.ResponseWriter, r *http.Request) {
 
 func validActivityTypeFilter(value string) bool {
 	switch value {
-	case "", "running", "cycling", "walking", "swimming", "strength", "cardio", "other":
+	case "", "running", "cycling", "walking", "swimming", "strength", "cardio", "elliptical", "other":
 		return true
 	default:
 		return false
