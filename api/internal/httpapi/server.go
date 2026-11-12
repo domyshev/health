@@ -100,6 +100,8 @@ func (s *Server) routes() http.Handler {
 	mux.HandleFunc("POST /v1/auth/verify-code", s.handleVerifyCode)
 	mux.Handle("POST /v1/auth/logout", s.requireAuth(http.HandlerFunc(s.handleLogout)))
 	mux.Handle("GET /v1/me", s.requireAuth(http.HandlerFunc(s.handleMe)))
+	mux.Handle("GET /v1/help-notes", s.requireAuth(http.HandlerFunc(s.handleHelpNotes)))
+	mux.Handle("POST /v1/help-notes", s.requireAuth(http.HandlerFunc(s.handleHelpNotes)))
 	s.registerHealthRoutes(mux)
 	return mux
 }

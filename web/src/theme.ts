@@ -1,18 +1,17 @@
 import { createTheme } from '@mui/material/styles'
 
-// Temporary semantic defaults. Replace values after the SportApp source palette is supplied.
 export function createAppTheme(mode: 'light' | 'dark') {
 return createTheme({
   cssVariables: true,
   palette: {
     mode,
-    primary: { main: mode === 'dark' ? '#7ee787' : '#196b37' },
-    secondary: { main: mode === 'dark' ? '#79c0ff' : '#125e9e' },
-    background: mode === 'dark' ? { default: '#0b1116', paper: '#111922' } : { default: '#f5f7f5', paper: '#ffffff' },
-    error: { main: '#ff7b72' },
-    warning: { main: '#e3b341' },
-    success: { main: '#7ee787' },
-    text: mode === 'dark' ? { primary: '#f0f6fc', secondary: '#9ba7b4' } : { primary: '#17221b', secondary: '#53645a' },
+    primary: { main: mode === 'dark' ? '#ef4444' : '#b91c1c' },
+    secondary: { main: mode === 'dark' ? '#eeeeee' : '#252525' },
+    background: mode === 'dark' ? { default: '#101010', paper: '#1b1b1b' } : { default: '#f4f4f4', paper: '#ffffff' },
+    error: { main: '#dc2626' },
+    warning: { main: '#b45309' },
+    success: { main: '#888888' },
+    text: mode === 'dark' ? { primary: '#f5f5f5', secondary: '#aaaaaa' } : { primary: '#161616', secondary: '#666666' },
   },
   shape: { borderRadius: 14 },
   typography: {
@@ -22,6 +21,7 @@ return createTheme({
     button: { textTransform: 'none', fontWeight: 700 },
   },
   components: {
+    MuiCssBaseline: { styleOverrides: { img: { filter: 'grayscale(100%)' } } },
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: { root: { minHeight: 44 } },
@@ -32,7 +32,7 @@ return createTheme({
     MuiCard: {
       styleOverrides: {
         root: {
-          border: mode === 'dark' ? '1px solid rgba(240, 246, 252, 0.09)' : '1px solid rgba(20, 50, 30, 0.14)',
+          border: mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.12)' : '1px solid rgba(0, 0, 0, 0.12)',
           backgroundImage: 'none',
         },
       },

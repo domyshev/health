@@ -10,6 +10,8 @@ import LightModeRounded from '@mui/icons-material/LightModeRounded'
 import DarkModeRounded from '@mui/icons-material/DarkModeRounded'
 import BrightnessAutoRounded from '@mui/icons-material/BrightnessAutoRounded'
 import SyncRounded from '@mui/icons-material/SyncRounded'
+import QueryStatsRounded from '@mui/icons-material/QueryStatsRounded'
+import { Help } from '../features/help/Help'
 import {
   Alert,
   AppBar,
@@ -72,6 +74,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [helpStatisticsOpen, setHelpStatisticsOpen] = useState(false)
   const [syncRunId, setSyncRunId] = useState<string>()
   const [syncPending, setSyncPending] = useState(false)
   const visible = useDocumentVisible()
@@ -176,6 +179,9 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
               </IconButton>
             </span>
           </Tooltip>
+          <Tooltip title="Help statistics">
+            <IconButton aria-label="Help statistics" onClick={() => setHelpStatisticsOpen(true)}><QueryStatsRounded /></IconButton>
+          </Tooltip>
           <Tooltip title="Garmin settings">
             <IconButton aria-label="Garmin settings" onClick={() => setDrawerOpen(true)}><GarminIcon /></IconButton>
           </Tooltip>
@@ -235,6 +241,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
           <Route element={<ActivitiesPage />} path="*" />
         </Routes>
       </Box>
+      <Help statisticsOpen={helpStatisticsOpen} onCloseStatistics={() => setHelpStatisticsOpen(false)} />
       <GarminDrawer onClose={() => setDrawerOpen(false)} open={drawerOpen} />
       <Box aria-live="polite" sx={{ height: 0, overflow: 'hidden' }}>{syncLabel}</Box>
     </Box>

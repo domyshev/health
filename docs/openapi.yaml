@@ -69,6 +69,38 @@ paths:
       responses:
         "200": {description: Current user, content: {application/json: {schema: {$ref: "#/components/schemas/User"}}}}
         "401": {$ref: "#/components/responses/Unauthenticated"}
+  /v1/help-notes:
+    get:
+      operationId: listHelpNotes
+      responses:
+        "200":
+          description: Current user's notes, newest first.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/HelpNote"}}
+        "401": {$ref: "#/components/responses/Unauthenticated"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
+    post:
+      operationId: createHelpNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note: {type: string, minLength: 1, maxLength: 5000}
+      responses:
+        "201": {description: Saved note, content: {application/json: {schema: {$ref: "#/components/schemas/HelpNote"}}}}
+        "400": {$ref: "#/components/responses/InvalidRequest"}
+        "401": {$ref: "#/components/responses/Unauthenticated"}
+        "403": {$ref: "#/components/responses/InvalidOrigin"}
+        "503": {$ref: "#/components/responses/ServiceUnavailable"}
   /v1/activity-field-settings:
     get:
       operationId: getActivityFieldSettings
@@ -214,6 +246,13 @@ components:
     Conflict: {description: Operation conflicts with current state, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
     ServiceUnavailable: {description: Service unavailable, content: {application/json: {schema: {$ref: "#/components/schemas/ErrorResponse"}}}}
   schemas:
+    HelpNote:
+      type: object
+      required: [id, note, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        note: {type: string}
+        createdAt: {type: string, format: date-time, description: Creation time in UTC.}
     ActivityFieldSetting:
       type: object
       required: [type, view, fields]
