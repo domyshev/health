@@ -126,7 +126,6 @@ export function ActivitiesPage() {
   return (
     <Box component="section">
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 3, minWidth: 0 }}>
-        <Typography component="h1" variant="h1" sx={{ flexShrink: 0 }}>Activities</Typography>
         <ActivityFilters value={type} onChange={(value) => {
           setPagination({ baseKey: '', items: [] })
           nextPageState.reset()

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import GarminIcon from '@mui/icons-material/WatchRounded'
 import LogoutRounded from '@mui/icons-material/LogoutRounded'
 import MenuRounded from '@mui/icons-material/MenuRounded'
@@ -70,6 +70,8 @@ function useDocumentVisible() {
 
 export function AppShell({ user, onLoggedOut }: AppShellProps) {
   const dispatch = useDispatch<AppDispatch>()
+  const { pathname } = useLocation()
+  const [deployedAt, setDeployedAt] = useState<string>()
   const { mode, setMode } = useThemeMode()
   const completedRunRef = useRef<string | undefined>(undefined)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -86,6 +88,26 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
   const { data: syncRun, refetch: refetchSyncRun } = useGetSyncRunQuery(effectiveSyncRunId ?? '', {
     skip: !effectiveSyncRunId,
   })
+
+  useEffect(() => {
+    if (!aboutOpen) return
+    const controller = new AbortController()
+    async function loadDeploymentTime() {
+      try {
+        const deployment = await fetch('/deployment.json', { signal: controller.signal }).then((response) => response.json()) as { commit?: string }
+        if (!deployment.commit) return
+        const refs = await fetch('https://api.github.com/repos/domyshev/health/git/matching-refs/tags/deploy-web-', { signal: controller.signal }).then((response) => response.json()) as { ref: string; object: { sha: string } }[]
+        if (!Array.isArray(refs)) return
+        const tag = refs.filter((ref) => ref.object.sha === deployment.commit).map((ref) => ref.ref).sort().at(-1)
+        const match = tag?.match(/deploy-web-(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z-/)
+        if (match) setDeployedAt(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}Z`)
+      } catch {
+        // Deployment metadata may be unavailable in development or offline.
+      }
+    }
+    void loadDeploymentTime()
+    return () => controller.abort()
+  }, [aboutOpen])
 
   const syncComplete = syncRun?.status === 'succeeded' || syncRun?.status === 'complete'
   const syncPartial = syncRun?.status === 'partial'
@@ -157,21 +179,22 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
   return (
     <Box sx={{ minHeight: '100dvh' }}>
       <AppBar color="transparent" elevation={0} position="sticky" sx={{ backdropFilter: 'blur(18px)', borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Toolbar sx={{ gap: { xs: 0.25, sm: 1.25 }, px: { xs: 1, sm: 3 } }}>
+        <Toolbar sx={{ gap: { xs: 0, sm: 1.25 }, px: { xs: 1, sm: 3 }, position: 'relative', '& .header-action': { color: 'text.secondary', p: { xs: 0.25, sm: 1 }, '& svg': { fontSize: 20 } } }}>
           <Stack direction="row" spacing={1} sx={{ flexGrow: 1, alignItems: 'center' }}>
             <HealthLogo />
-            <Typography sx={{ fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health</Typography>
+            <Typography sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health</Typography>
           </Stack>
+          {(pathname === '/' || !pathname.startsWith('/activities/')) && <Typography component="h1" sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: { xs: '1.25rem', sm: 'clamp(1.5rem, calc(5vw - 8px), 3rem)' }, fontWeight: 760, letterSpacing: '-0.04em', pointerEvents: 'none' }}>Activities</Typography>}
           <Chip
             color={syncRun?.status === 'failed' ? 'error' : reconnectRequired || syncPartial ? 'warning' : 'default'}
             label={syncLabel}
             size="small"
-            sx={{ display: { xs: 'none', md: 'inline-flex' } }}
+            sx={{ display: { xs: 'none', lg: 'inline-flex' }, ...(syncLabel.startsWith('Synced:') ? { bgcolor: mode === 'dark' ? 'rgba(211, 169, 78, 0.16)' : 'rgba(211, 169, 78, 0.18)' } : {}) }}
             title={lastSyncedAt}
           />
           <Tooltip title={connected ? 'Sync now' : 'Connect Garmin before syncing'}>
             <span>
-              <IconButton aria-label="Sync now" disabled={!connected || active} onClick={() => void beginSync()}>
+              <IconButton className="header-action" aria-label="Sync now" disabled={!connected || active} onClick={() => void beginSync()}>
                 <SyncRounded sx={{
                   animation: active ? 'spin 1s linear infinite' : 'none',
                   '@keyframes spin': { to: { transform: 'rotate(360deg)' } },
@@ -181,13 +204,13 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
             </span>
           </Tooltip>
           <Tooltip title="Help statistics">
-            <IconButton aria-label="Help statistics" onClick={() => setHelpStatisticsOpen(true)}><QueryStatsRounded /></IconButton>
+            <IconButton className="header-action" aria-label="Help statistics" onClick={() => setHelpStatisticsOpen(true)}><QueryStatsRounded /></IconButton>
           </Tooltip>
           <Tooltip title="Garmin settings">
-            <IconButton aria-label="Garmin settings" onClick={() => setDrawerOpen(true)}><GarminIcon /></IconButton>
+            <IconButton className="header-action" aria-label="Garmin settings" onClick={() => setDrawerOpen(true)}><GarminIcon /></IconButton>
           </Tooltip>
           <Tooltip title="Menu">
-            <IconButton aria-label="Menu" aria-haspopup="menu" aria-expanded={Boolean(menuAnchor)} onClick={(event) => setMenuAnchor(event.currentTarget)}><MenuRounded /></IconButton>
+            <IconButton sx={{ p: { xs: 0.25, sm: 1 } }} aria-label="Menu" aria-haspopup="menu" aria-expanded={Boolean(menuAnchor)} onClick={(event) => setMenuAnchor(event.currentTarget)}><MenuRounded /></IconButton>
           </Tooltip>
           <Menu anchorEl={menuAnchor} onClose={() => setMenuAnchor(null)} open={Boolean(menuAnchor)} slotProps={{ paper: { sx: { minWidth: 250, mt: 1 } } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1 }}>
@@ -217,7 +240,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
           <Stack spacing={2}>
             <HealthLogo size={56} />
             <Typography color="text.secondary">Your activities and health data in one place.</Typography>
-            <Typography>Version: {version}</Typography>
+            <Typography>Version: {version}{deployedAt && ` (${deployedAt})`}</Typography>
             <Typography>Author: <Link href="https://github.com/domyshev" target="_blank" rel="noopener noreferrer">domyshev</Link></Typography>
             <Typography>Source code: <Link href="https://github.com/domyshev/health" target="_blank" rel="noopener noreferrer">github.com/domyshev/health</Link></Typography>
           </Stack>
@@ -237,7 +260,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
       {logoutState.isError && (
         <Alert severity="error">Logout could not be completed. Your session is still active; try again.</Alert>
       )}
-      <Box component="main" sx={{ mx: 'auto', maxWidth: 1180, p: { xs: 2, sm: 4 } }}>
+      <Box component="main" sx={{ mx: 'auto', maxWidth: 1180, px: { xs: 2, sm: 4 }, pt: 2, pb: { xs: 2, sm: 4 } }}>
         <Routes>
           <Route element={<ActivitiesPage />} path="/" />
           <Route element={<ActivityDetailsPage />} path="/activities/:activityId" />
