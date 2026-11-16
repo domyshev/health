@@ -61,7 +61,6 @@ export function Help({ statisticsOpen, onCloseStatistics }: { statisticsOpen: bo
       <svg aria-hidden="true" viewBox="0 0 62 62" style={{ position: 'absolute', inset: 3, width: 62, height: 62, pointerEvents: 'none' }}>
         <path d="M31 1 C47.6 1 61 14.4 61 31 S47.6 61 31 61 S4 48.9 4 34 S15.4 7 29.5 7 S55 18.4 55 32 S44.9 55 32.5 55 S10 45.4 10 33.5 S19 12 30 12 S50 20.5 50 31 S42.4 50 33 50 S16 42.8 16 34 S22.7 18 31 18 S46 24.3 46 32 S40.2 46 33 46 S20 40.6 20 34 S24.9 22 31 22 S42 26.5 42 32 S38 42 33 42" fill="none" stroke="#ff88b4" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
       </svg>
-      <span style={{ position: 'relative' }}>help me</span>
     </Box>
     <Dialog fullWidth maxWidth="sm" open={open} onClose={() => { if (!saving) setOpen(false) }}>
       <DialogTitle>I’m one step away from doing something very, very bad...</DialogTitle>

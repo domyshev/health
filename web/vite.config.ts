@@ -1,8 +1,17 @@
 import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
+import packageInfo from './package.json' with { type: 'json' }
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), {
+    name: 'release-metadata',
+    transformIndexHtml() {
+      return [
+        { tag: 'meta', attrs: { name: 'build-time', content: new Date().toISOString() }, injectTo: 'head' },
+        { tag: 'meta', attrs: { name: 'app-version', content: packageInfo.version }, injectTo: 'head' },
+      ]
+    },
+  }],
   server: {
     host: '127.0.0.1',
     port: 5173,
