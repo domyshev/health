@@ -251,6 +251,15 @@ func TestActivityOwnershipAndOfflineRead(t *testing.T) {
 	if err != nil || len(elliptical) != 1 || elliptical[0].SourceType != "elliptical" {
 		t.Fatalf("elliptical filter: activities=%+v err=%v", elliptical, err)
 	}
+	combined, _, err := store.ListActivities(ctx, ownerID, "cardio,swimming", nil, 20)
+	if err != nil || len(combined) != 2 {
+		t.Fatalf("combined filter: activities=%+v err=%v", combined, err)
+	}
+	for _, activity := range combined {
+		if activity.Type != "cardio" && activity.Type != "swimming" {
+			t.Fatalf("combined filter included %q", activity.Type)
+		}
+	}
 	date := time.Date(2026, 9, 21, 0, 0, 0, 0, time.UTC)
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO daily_health (user_id, source, health_date, steps)

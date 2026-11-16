@@ -823,7 +823,8 @@ export interface operations {
     listActivities: {
         parameters: {
             query?: {
-                type?: "running" | "cycling" | "walking" | "swimming" | "strength" | "cardio" | "elliptical" | "other";
+                /** @description Comma-separated activity types to include; omit to include all types. */
+                type?: string;
                 cursor?: string;
                 limit?: number;
             };

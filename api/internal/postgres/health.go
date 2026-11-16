@@ -89,7 +89,7 @@ func (s *Store) ListActivities(
 		SELECT `+activityColumns+`
 		FROM normalized
 		WHERE user_id = $1
-		  AND ($2 = '' OR normalized_type = $2)
+		  AND ($2 = '' OR normalized_type = ANY(string_to_array($2, ',')))
 		  AND (sort_started_at, id) < ($3, $4::uuid)
 		ORDER BY sort_started_at DESC, id DESC
 		LIMIT $5`, userID, typeFilter, cursorTime, cursorID, limit+1)

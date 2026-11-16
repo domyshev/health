@@ -16,6 +16,7 @@ import (
 
 type fakeHealthRepository struct {
 	requestedUserID string
+	requestedTypes  string
 	activities      []health.Activity
 	connection      health.GarminConnection
 	run             health.SyncRun
@@ -65,9 +66,32 @@ func TestActivityFieldSettingsAreAuthenticatedAndValidated(t *testing.T) {
 	}
 }
 
-func (f *fakeHealthRepository) ListActivities(_ context.Context, userID, _ string, _ *health.ActivityCursor, _ int) ([]health.Activity, *health.ActivityCursor, error) {
+func (f *fakeHealthRepository) ListActivities(_ context.Context, userID, types string, _ *health.ActivityCursor, _ int) ([]health.Activity, *health.ActivityCursor, error) {
 	f.requestedUserID = userID
+	f.requestedTypes = types
 	return f.activities, nil, nil
+}
+
+func TestActivityFiltersAcceptMultipleTypesAndRejectInvalidMembers(t *testing.T) {
+	for _, tc := range []struct {
+		filter string
+		status int
+	}{
+		{"running,swimming", http.StatusOK},
+		{"running,unknown", http.StatusBadRequest},
+		{"running,", http.StatusBadRequest},
+	} {
+		repository := &fakeHealthRepository{}
+		response := httptest.NewRecorder()
+		authenticatedServer(repository, &fakeImporterClient{}).ServeHTTP(response,
+			authenticatedRequest(http.MethodGet, "/v1/activities?type="+tc.filter, nil))
+		if response.Code != tc.status {
+			t.Fatalf("filter=%q status=%d want=%d", tc.filter, response.Code, tc.status)
+		}
+		if tc.status == http.StatusOK && repository.requestedTypes != tc.filter {
+			t.Fatalf("filter not forwarded: %q", repository.requestedTypes)
+		}
+	}
 }
 
 func (f *fakeHealthRepository) GetActivity(_ context.Context, userID, activityID string) (health.Activity, error) {

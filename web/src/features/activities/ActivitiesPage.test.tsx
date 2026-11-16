@@ -31,6 +31,26 @@ function page(name: string, nextCursor: string) {
 }
 
 describe('activities', () => {
+  it('combines selected types, removes a type and resets to all', async () => {
+    const urls: string[] = []
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      urls.push(String(input))
+      return page('Session', '')
+    }))
+    const user = userEvent.setup()
+    render(<ActivitiesPage />, { wrapper: TestProviders })
+    await user.click(screen.getByRole('checkbox', { name: 'Running' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Swimming' }))
+    await waitFor(() => expect(urls.some((url) => new URL(url, 'http://localhost').searchParams.get('type') === 'running,swimming')).toBe(true))
+    expect(screen.getByRole('checkbox', { name: 'Running' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Swimming' })).toBeChecked()
+    await user.click(screen.getByRole('checkbox', { name: 'Running' }))
+    expect(screen.getByRole('checkbox', { name: 'Running' })).not.toBeChecked()
+    await user.click(screen.getByRole('checkbox', { name: 'All' }))
+    expect(screen.getByRole('checkbox', { name: 'All' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Swimming' })).not.toBeChecked()
+  })
+
   it('filters by activity type and appends cursor pages', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
@@ -49,8 +69,7 @@ describe('activities', () => {
     await user.unhover(icon)
     expect(screen.getAllByText(/420 kcal/i).length).toBeGreaterThan(0)
     expect(screen.getAllByText(/pool · 1:40 \/100m/i).length).toBeGreaterThan(0)
-    await user.click(screen.getByLabelText(/activity type/i))
-    await user.click(screen.getByRole('option', { name: 'swimming' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Swimming' }))
     await user.click(await screen.findByRole('button', { name: /load more/i }))
 
     expect(await screen.findByRole('img', { name: 'Evening swim' })).toBeInTheDocument()
@@ -74,8 +93,7 @@ describe('activities', () => {
     render(<ActivitiesPage />, { wrapper: TestProviders })
 
     expect(await screen.findByRole('img', { name: 'Unfiltered activity' })).toBeInTheDocument()
-    await user.click(screen.getByLabelText(/activity type/i))
-    await user.click(screen.getByRole('option', { name: 'running' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Running' }))
     expect(await screen.findByRole('img', { name: 'Filtered run' })).toBeInTheDocument()
 
     expect(requestedUrls.some((url) => url.includes('type=running') && url.includes('cursor=all-next'))).toBe(false)
@@ -125,8 +143,7 @@ describe('activities', () => {
     render(<ActivitiesPage />, { wrapper: TestProviders })
 
     expect(await screen.findByText('No activities yet')).toBeInTheDocument()
-    await user.click(screen.getByLabelText(/activity type/i))
-    await user.click(screen.getByRole('option', { name: 'cycling' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Cycling' }))
 
     expect(await screen.findByText('No cycling activities')).toBeInTheDocument()
     expect(screen.getByText(/choose another filter/i)).toBeInTheDocument()

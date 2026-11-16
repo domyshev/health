@@ -21,6 +21,7 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  Divider,
   IconButton,
   Link,
   ListItemIcon,
@@ -50,7 +51,7 @@ import type { AppDispatch } from '../store'
 import { resetUiState } from '../store'
 import { version } from '../../package.json'
 import { useThemeMode } from '../ThemeMode'
-import appLogo from '../assets/health-logo.png'
+import { HealthLogo } from '../components/HealthLogo'
 
 interface AppShellProps {
   user: User
@@ -158,7 +159,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
       <AppBar color="transparent" elevation={0} position="sticky" sx={{ backdropFilter: 'blur(18px)', borderBottom: '1px solid', borderColor: 'divider' }}>
         <Toolbar sx={{ gap: { xs: 0.25, sm: 1.25 }, px: { xs: 1, sm: 3 } }}>
           <Stack direction="row" spacing={1} sx={{ flexGrow: 1, alignItems: 'center' }}>
-            <Box component="img" src={appLogo} alt="" sx={{ width: 36, height: 36, borderRadius: 1.5 }} />
+            <HealthLogo />
             <Typography sx={{ fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health</Typography>
           </Stack>
           <Chip
@@ -191,16 +192,18 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
           <Menu anchorEl={menuAnchor} onClose={() => setMenuAnchor(null)} open={Boolean(menuAnchor)} slotProps={{ paper: { sx: { minWidth: 250, mt: 1 } } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2, py: 1 }}>
               <Typography color="text.secondary" variant="body2">Theme</Typography>
-              <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_event, value: 'light' | 'system' | 'dark' | null) => { if (value) setMode(value) }} aria-label="Theme">
-                <ToggleButton value="light" aria-label="Light theme"><LightModeRounded fontSize="small" /></ToggleButton>
-                <ToggleButton value="system" aria-label="System theme"><BrightnessAutoRounded fontSize="small" /></ToggleButton>
-                <ToggleButton value="dark" aria-label="Dark theme"><DarkModeRounded fontSize="small" /></ToggleButton>
+              <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_event, value: 'light' | 'system' | 'dark' | null) => { if (value) setMode(value) }} aria-label="Theme" sx={{ '& .MuiToggleButton-root': { py: '4px' } }}>
+                <ToggleButton value="light" aria-label="Light theme"><LightModeRounded fontSize="small" sx={{ color: '#e9b969' }} /></ToggleButton>
+                <ToggleButton value="system" aria-label="System theme"><BrightnessAutoRounded fontSize="small" sx={{ color: '#92bcad' }} /></ToggleButton>
+                <ToggleButton value="dark" aria-label="Dark theme"><DarkModeRounded fontSize="small" sx={{ color: '#b3a4df' }} /></ToggleButton>
               </ToggleButtonGroup>
             </Box>
+            <Divider />
             <MenuItem onClick={() => { setMenuAnchor(null); setAboutOpen(true) }}>
               <ListItemIcon><InfoOutlined /></ListItemIcon><ListItemText>About…</ListItemText>
               <Typography color="text.secondary" variant="body2">{version}</Typography>
             </MenuItem>
+            <Divider />
             <MenuItem disabled={logoutState.isLoading} onClick={() => { setMenuAnchor(null); void endSession() }}>
               <ListItemIcon><LogoutRounded /></ListItemIcon><ListItemText primary="Log out" secondary={user.email} />
             </MenuItem>
@@ -212,7 +215,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
         <DialogTitle>About Health<IconButton aria-label="Close about" onClick={() => setAboutOpen(false)} sx={{ position: 'absolute', right: 12, top: 12 }}><CloseRounded /></IconButton></DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
-            <Box component="img" src={appLogo} alt="Health logo" sx={{ width: 56, height: 56, borderRadius: 2 }} />
+            <HealthLogo size={56} />
             <Typography color="text.secondary">Your activities and health data in one place.</Typography>
             <Typography>Version: {version}</Typography>
             <Typography>Author: <Link href="https://github.com/domyshev" target="_blank" rel="noopener noreferrer">domyshev</Link></Typography>

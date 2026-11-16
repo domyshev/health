@@ -13,10 +13,8 @@ import {
   CardActionArea,
   CardContent,
   Grid,
-  MenuItem,
   Skeleton,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material'
 
@@ -30,7 +28,7 @@ import { ActivityIcon } from './ActivityIcon'
 import { ActivityFieldSettings, useActivityFields } from './ActivityFieldSettings'
 import { fieldLabels, fieldValue, type Field } from './activityFields'
 
-const activityTypes = ['all', 'running', 'cycling', 'walking', 'swimming', 'strength', 'cardio', 'elliptical', 'other']
+import { ActivityFilters } from './ActivityFilters'
 
 function ActivityCard({ activity }: { activity: Activity }) {
   const { fields } = useActivityFields(activity.type, 'list')
@@ -83,7 +81,7 @@ export function ActivitiesPage() {
   const sentinelRef = useRef<HTMLDivElement>(null)
   const { currentData: data, isError, isLoading, refetch } = useGetActivitiesQuery({ type })
   const [loadPage, nextPageState] = useLazyGetActivitiesQuery()
-  const baseKey = `${data?.items[0]?.id ?? ''}:${data?.nextCursor ?? ''}`
+  const baseKey = `${type}:${data?.items[0]?.id ?? ''}:${data?.nextCursor ?? ''}`
   const additional = useMemo(
     () => pagination.baseKey === baseKey ? pagination.items : [],
     [baseKey, pagination.baseKey, pagination.items],
@@ -127,27 +125,13 @@ export function ActivitiesPage() {
 
   return (
     <Box component="section">
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ alignItems: { sm: 'center' }, justifyContent: 'space-between', mb: 3 }}>
-        <Box>
-          <Typography component="h1" variant="h1">Activities</Typography>
-          <Typography color="text.secondary">A focused record of every imported workout.</Typography>
-        </Box>
-        <TextField
-          label="Activity type"
-          onChange={(event) => {
-            setPagination({ baseKey: '', items: [] })
-            nextPageState.reset()
-            dispatch(setActivityType(event.target.value))
-          }}
-          select
-          size="small"
-          sx={{ minWidth: 190 }}
-          value={type}
-        >
-          {activityTypes.map((item) => (
-            <MenuItem key={item} value={item}>{item === 'all' ? 'All activities' : item}</MenuItem>
-          ))}
-        </TextField>
+      <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 3, minWidth: 0 }}>
+        <Typography component="h1" variant="h1" sx={{ flexShrink: 0 }}>Activities</Typography>
+        <ActivityFilters value={type} onChange={(value) => {
+          setPagination({ baseKey: '', items: [] })
+          nextPageState.reset()
+          dispatch(setActivityType(value))
+        }} />
       </Stack>
 
       {isLoading && (
@@ -158,7 +142,7 @@ export function ActivitiesPage() {
       {isError && <Alert action={<Button onClick={() => void refetch()}>Retry</Button>} severity="error">Activities could not be loaded.</Alert>}
       {!isLoading && !isError && activities.length === 0 && (
         <Card sx={{ p: 5, textAlign: 'center' }}>
-          <Typography component="h2" variant="h6">{type === 'all' ? 'No activities yet' : `No ${type} activities`}</Typography>
+          <Typography component="h2" variant="h6">{type === 'all' ? 'No activities yet' : `No ${type.replaceAll(',', ' or ')} activities`}</Typography>
           <Typography color="text.secondary">
             {type === 'all' ? 'Connect Garmin and run your first sync.' : 'Choose another filter or run a new sync.'}
           </Typography>

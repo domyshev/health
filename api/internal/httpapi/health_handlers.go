@@ -57,7 +57,7 @@ func (s *Server) handleSaveActivityFieldSettings(w http.ResponseWriter, r *http.
 	if !s.decodeJSON(w, r, &setting) {
 		return
 	}
-	if setting.Type == "" || !validActivityTypeFilter(setting.Type) || (setting.View != "list" && setting.View != "detail") || setting.Fields == nil {
+	if setting.Type == "" || strings.Contains(setting.Type, ",") || !validActivityTypeFilter(setting.Type) || (setting.View != "list" && setting.View != "detail") || setting.Fields == nil {
 		s.writeError(w, r, http.StatusBadRequest, "invalid_request", "Invalid activity field settings")
 		return
 	}
@@ -381,12 +381,17 @@ func (s *Server) serviceUnavailable(w http.ResponseWriter, r *http.Request) {
 }
 
 func validActivityTypeFilter(value string) bool {
-	switch value {
-	case "", "running", "cycling", "walking", "swimming", "strength", "cardio", "elliptical", "other":
+	if value == "" {
 		return true
-	default:
-		return false
 	}
+	for _, item := range strings.Split(value, ",") {
+		switch item {
+		case "running", "cycling", "walking", "swimming", "strength", "cardio", "elliptical", "other":
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func encodeActivityCursor(cursor health.ActivityCursor) string {
