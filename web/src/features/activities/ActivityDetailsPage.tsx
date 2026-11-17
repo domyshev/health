@@ -43,7 +43,7 @@ export function ActivityDetailsPage() {
   })
   return (
     <Box component="section">
-      <Button component={RouterLink} startIcon={<ArrowBackRounded />} to="/">Back to activities</Button>
+      <Button className="quiet-red-action" component={RouterLink} startIcon={<ArrowBackRounded />} to="/">Back to activities</Button>
       <Stack spacing={1} sx={{ mt: 3, mb: 3 }}>
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography color="text.secondary">{activity.startedAt ? new Date(activity.startedAt).toLocaleString() : 'Date unavailable'}</Typography>

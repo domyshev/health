@@ -133,7 +133,7 @@ export function GarminDrawer({ open, onClose }: GarminDrawerProps) {
             <Typography component="h2" variant="h4">Garmin</Typography>
           </Box>
           <Tooltip title="Close Garmin settings">
-            <IconButton aria-label="Close Garmin settings" onClick={closeDrawer}><CloseRounded /></IconButton>
+            <IconButton className="quiet-red-action" aria-label="Close Garmin settings" onClick={closeDrawer}><CloseRounded /></IconButton>
           </Tooltip>
         </Stack>
 

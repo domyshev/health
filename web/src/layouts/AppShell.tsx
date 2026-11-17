@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { Link as RouterLink, Route, Routes, useLocation } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import GarminIcon from '@mui/icons-material/WatchRounded'
 import LogoutRounded from '@mui/icons-material/LogoutRounded'
 import MenuRounded from '@mui/icons-material/MenuRounded'
@@ -11,6 +11,7 @@ import DarkModeRounded from '@mui/icons-material/DarkModeRounded'
 import BrightnessAutoRounded from '@mui/icons-material/BrightnessAutoRounded'
 import SyncRounded from '@mui/icons-material/SyncRounded'
 import QueryStatsRounded from '@mui/icons-material/QueryStatsRounded'
+import HomeRounded from '@mui/icons-material/HomeRounded'
 import { Help } from '../features/help/Help'
 import {
   Alert,
@@ -52,7 +53,6 @@ import { resetUiState } from '../store'
 import { version } from '../../package.json'
 import { useThemeMode } from '../ThemeMode'
 import { HealthLogo } from '../components/HealthLogo'
-import { lighten } from '@mui/material/styles'
 
 interface AppShellProps {
   user: User
@@ -185,8 +185,8 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
             <HealthLogo />
             <Typography sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health</Typography>
           </Stack>
-          {(pathname === '/' || !pathname.startsWith('/activities/')) && <Box component="nav" aria-label="Breadcrumb" sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '1.25rem', fontWeight: 760, letterSpacing: '-0.04em', whiteSpace: 'nowrap' }}>
-            <Link component={RouterLink} to="/" color="text.primary" underline="always" sx={{ '&:hover': { color: (theme) => lighten(theme.palette.text.primary, 0.22) } }}>Home</Link>
+          {(pathname === '/' || !pathname.startsWith('/activities/')) && <Box component="nav" aria-label="Breadcrumb" sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '1rem', fontWeight: 760, letterSpacing: '-0.04em', whiteSpace: 'nowrap' }}>
+            <HomeRounded titleAccess="Home" sx={{ fontSize: '1em', '@keyframes home-wink': { '0%, 100%': { opacity: 1 }, '50%': { opacity: 0.25 } }, '&:hover': { animation: 'home-wink 400ms ease-in-out' }, '@media (prefers-reduced-motion: reduce)': { '&:hover': { animation: 'none' } } }} />
             <Box component="span" aria-hidden="true">»</Box>
             <Typography component="h1" aria-current="page" sx={{ fontSize: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit' }}>Activities</Typography>
           </Box>}
@@ -240,7 +240,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
       </AppBar>
 
       <Dialog fullWidth maxWidth="xs" onClose={() => setAboutOpen(false)} open={aboutOpen}>
-        <DialogTitle>About Health<IconButton aria-label="Close about" onClick={() => setAboutOpen(false)} sx={{ position: 'absolute', right: 12, top: 12 }}><CloseRounded /></IconButton></DialogTitle>
+        <DialogTitle>About Health<IconButton className="quiet-red-action" aria-label="Close about" onClick={() => setAboutOpen(false)} sx={{ position: 'absolute', right: 12, top: 12 }}><CloseRounded /></IconButton></DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
             <HealthLogo size={56} />

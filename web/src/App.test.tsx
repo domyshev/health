@@ -48,7 +48,7 @@ describe('passwordless authentication', () => {
     await user.type(codeInput, '123456')
     await user.click(screen.getByRole('button', { name: /verify/i }))
 
-    expect(await screen.findByRole('heading', { name: /activities/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Activities' })).toBeInTheDocument()
     expect(meReads).toBeGreaterThan(1)
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(

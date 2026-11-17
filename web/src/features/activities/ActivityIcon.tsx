@@ -8,6 +8,7 @@ import walkingImage from '../../assets/activities/walking.png'
 import strengthImage from '../../assets/activities/strength.png'
 import poolImage from '../../assets/activities/pool.png'
 import type { Activity } from '../../api/healthApi'
+import { GoldStars } from '../../components/GoldStars'
 
 const images: Record<string, string> = {
   swimming: swimmingImage,
@@ -26,8 +27,9 @@ export function ActivityIcon({ activity, detail = false }: { activity: Activity;
         component="span"
         role="img"
         tabIndex={detail ? 0 : undefined}
-        sx={{ alignItems: 'center', backgroundColor: '#f3f4ef', borderRadius: 2.5, color: '#111', display: 'inline-flex', flexShrink: 0, height: detail ? 54 : 36, justifyContent: 'center', p: 0.75, verticalAlign: 'middle', width: detail ? 72 : 48 }}
+        sx={{ alignItems: 'center', color: 'text.primary', display: 'inline-flex', flexShrink: 0, height: detail ? 54 : 36, justifyContent: 'center', p: 0.75, position: 'relative', verticalAlign: 'middle', width: detail ? 72 : 48 }}
       >
+        <Box aria-hidden="true" sx={{ position: 'absolute', inset: -5, pointerEvents: 'none' }}><GoldStars /></Box>
         {activity.type === 'elliptical' ? (
           <Box aria-hidden="true" component="svg" viewBox="0 0 64 48" sx={{ height: '100%', width: '100%' }}>
             <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3">
@@ -43,7 +45,7 @@ export function ActivityIcon({ activity, detail = false }: { activity: Activity;
             </g>
           </Box>
         ) : image ? (
-          <Box alt="" component="img" src={image} sx={{ filter: 'brightness(0)', height: '100%', objectFit: 'contain', width: '100%' }} />
+          <Box aria-hidden="true" component="span" sx={{ backgroundColor: 'currentColor', height: '100%', width: '100%', maskImage: `url(${image})`, WebkitMaskImage: `url(${image})`, maskPosition: 'center', maskRepeat: 'no-repeat', maskSize: 'contain' }} />
         ) : activity.type === 'running' ? <DirectionsRunRounded aria-hidden="true" /> : activity.type === 'cardio' ? <MonitorHeartRounded aria-hidden="true" /> : <MoreHorizRounded aria-hidden="true" />}
       </Box>
     </Tooltip>

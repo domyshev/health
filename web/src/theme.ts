@@ -1,11 +1,16 @@
 import { createTheme } from '@mui/material/styles'
 
 export function createAppTheme(mode: 'light' | 'dark') {
+const quietRedAction = {
+  color: mode === 'dark' ? '#ef4444' : '#b91c1c',
+  '&:hover': { backgroundColor: 'transparent', color: mode === 'dark' ? '#ff8585' : '#e04b4b' },
+  '&.Mui-focusVisible': { outline: '2px solid currentColor', outlineOffset: 2 },
+}
 return createTheme({
   cssVariables: true,
   palette: {
     mode,
-    primary: { main: mode === 'dark' ? '#ef4444' : '#b91c1c' },
+    primary: { main: mode === 'dark' ? '#ef4444' : '#b91c1c', contrastText: mode === 'dark' ? '#101010' : '#ffffff' },
     secondary: { main: mode === 'dark' ? '#eeeeee' : '#252525' },
     background: mode === 'dark' ? { default: '#101010', paper: '#1b1b1b' } : { default: '#f4f4f4', paper: '#ffffff' },
     error: { main: '#dc2626' },
@@ -24,7 +29,10 @@ return createTheme({
     MuiCssBaseline: { styleOverrides: { img: { filter: 'grayscale(100%)' } } },
     MuiButton: {
       defaultProps: { disableElevation: true },
-      styleOverrides: { root: { minHeight: 44 } },
+      styleOverrides: { root: { minHeight: 44, '&.quiet-red-action': quietRedAction } },
+    },
+    MuiIconButton: {
+      styleOverrides: { root: { '&.quiet-red-action': quietRedAction } },
     },
     MuiTextField: {
       defaultProps: { fullWidth: true },
