@@ -1,26 +1,40 @@
 import { useEffect, useRef, useState } from 'react'
-import { Alert, Box, Button, ClickAwayListener, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Paper, Popper, Stack, TextField, Typography, useMediaQuery } from '@mui/material'
+import { Alert, Box, Button, ClickAwayListener, Dialog, DialogContent, DialogTitle, Divider, IconButton, Paper, Popper, Stack, TextField, Tooltip, Typography, useMediaQuery } from '@mui/material'
 import CloseRounded from '@mui/icons-material/CloseRounded'
+import ArrowBackRounded from '@mui/icons-material/ArrowBackRounded'
 import { apiRequest } from '../../api/client'
 import sweetIllustration from '../../assets/sweet-comic.png'
+import { ImageChoice } from './ImageChoice'
+import { sweets, type SweetId } from './sweets'
 
 type Note = { id: string; note: string; createdAt: string }
 type Position = { x: number; y: number }
-const sweets = [
-  { id: 'candy', label: 'Candy' }, { id: 'wafer', label: 'Wafer' },
-  { id: 'snickers', label: 'Snickers' }, { id: 'ice-cream', label: 'Ice cream' },
-  { id: 'gummy', label: 'Gummy candy' }, { id: 'condensed-milk', label: 'Condensed milk' },
-] as const
+type Draft = { step: 'intro' | 'sweets' | 'confirm'; selectedId: SweetId | null; calories: string }
+const emptyDraft: Draft = { step: 'intro', selectedId: null, calories: '' }
+
+function readDraft(key: string): Draft {
+  try {
+    const raw = sessionStorage.getItem(key)
+    if (!raw) return emptyDraft
+    const value = JSON.parse(raw) as Partial<Draft>
+    const selected = sweets.find((sweet) => sweet.id === value.selectedId)
+    const step = value.step === 'sweets' || (value.step === 'confirm' && selected) ? value.step : 'intro'
+    return { step, selectedId: selected?.id ?? null, calories: typeof value.calories === 'string' ? value.calories : '' }
+  } catch {
+    return emptyDraft
+  }
+}
 
 const clamp = (p: Position, size: number): Position => ({ x: Math.max(0, Math.min(p.x, window.innerWidth - size)), y: Math.max(0, Math.min(p.y, window.innerHeight - size)) })
 
-export function Help({ statisticsOpen, onCloseStatistics }: { statisticsOpen: boolean; onCloseStatistics: () => void }) {
+export function Help({ userId, statisticsOpen, onCloseStatistics }: { userId: string; statisticsOpen: boolean; onCloseStatistics: () => void }) {
   const size = useMediaQuery('(min-width:600px)') ? 46 : 56
+  const draftKey = `health:life-situations:${userId}`
   const [position, setPosition] = useState<Position | null>(null)
   const [open, setOpen] = useState(false)
-  const [choosing, setChoosing] = useState(false)
-  const [selected, setSelected] = useState<typeof sweets[number] | null>(null)
-  const [calories, setCalories] = useState('')
+  const [draft, setDraft] = useState<Draft>(() => readDraft(draftKey))
+  const selected = sweets.find((sweet) => sweet.id === draft.selectedId)
+  const { calories } = draft
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [items, setItems] = useState<Note[]>([])
@@ -31,6 +45,15 @@ export function Help({ statisticsOpen, onCloseStatistics }: { statisticsOpen: bo
   const popoverRef = useRef<HTMLDivElement>(null)
   const drag = useRef<{ startX: number; startY: number; x: number; y: number; moved: boolean } | null>(null)
   const suppressClick = useRef(false)
+
+  useEffect(() => {
+    try {
+      if (draft.step === 'intro' && draft.selectedId === null && draft.calories === '') sessionStorage.removeItem(draftKey)
+      else sessionStorage.setItem(draftKey, JSON.stringify(draft))
+    } catch {
+      // The choice remains available in memory if browser storage is unavailable.
+    }
+  }, [draft, draftKey])
 
   useEffect(() => {
     if (open) popoverRef.current?.focus()
@@ -55,7 +78,7 @@ export function Help({ statisticsOpen, onCloseStatistics }: { statisticsOpen: bo
     setSaving(true); setError('')
     try {
       await apiRequest<Note>('/v1/help-notes', { method: 'POST', body: JSON.stringify({ note: `Wanted to eat: ${selected.label}${calories === '' ? '' : ` · ${Number(calories)} kcal`}` }) })
-      setSelected(null); setCalories(''); setChoosing(false); setOpen(false)
+      setDraft(emptyDraft); setOpen(false)
     } catch { setError('Could not save your note. Please try again.') }
     finally { setSaving(false) }
   }
@@ -70,29 +93,31 @@ export function Help({ statisticsOpen, onCloseStatistics }: { statisticsOpen: bo
         <path transform="translate(1 1)" d="M31 1 C47.6 1 61 14.4 61 31 S47.6 61 31 61 S4 48.9 4 34 S15.4 7 29.5 7 S55 18.4 55 32 S44.9 55 32.5 55 S10 45.4 10 33.5 S19 12 30 12 S50 20.5 50 31 S42.4 50 33 50 S16 42.8 16 34 S22.7 18 31 18 S46 24.3 46 32 S40.2 46 33 46 S20 40.6 20 34 S24.9 22 31 22 S42 26.5 42 32 S38 42 33 42" fill="none" stroke="#ff88b4" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
       </svg>
     </Box>
-    <Popper open={open} anchorEl={fabRef.current} placement="top-end" modifiers={[{ name: 'offset', options: { offset: [0, 12] } }, { name: 'arrow', options: { element: arrow, padding: 12 } }, { name: 'preventOverflow', options: { padding: 8 } }]} sx={{ zIndex: 1300, '&[data-popper-placement^="top"] .help-arrow': { bottom: -7 }, '&[data-popper-placement^="bottom"] .help-arrow': { top: -7 } }}>
+    <Popper role="presentation" open={open} anchorEl={fabRef.current} placement="top-end" modifiers={[{ name: 'offset', options: { offset: [0, 12] } }, { name: 'arrow', options: { element: arrow, padding: 12 } }, { name: 'preventOverflow', options: { padding: 8 } }]} sx={{ zIndex: 1300, '&[data-popper-placement^="top"] .help-arrow': { bottom: -7 }, '&[data-popper-placement^="bottom"] .help-arrow': { top: -7 } }}>
       <ClickAwayListener onClickAway={(event) => { if (!saving && !fabRef.current?.contains(event.target as Node)) setOpen(false) }}>
         <Paper id="life-situations-popover" ref={popoverRef} role="dialog" aria-labelledby="life-situations-title" tabIndex={-1} elevation={12} onKeyDown={(event) => { if (event.key === 'Escape' && !saving) { event.stopPropagation(); setOpen(false); fabRef.current?.focus() } }} sx={{ position: 'relative', width: 'min(360px, calc(100vw - 16px))', outline: 'none', backgroundImage: 'none', border: '1px solid', borderColor: 'divider' }}>
           <Box component="span" ref={setArrow} className="help-arrow" aria-hidden="true" sx={{ position: 'absolute', width: 14, height: 14, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', transform: 'rotate(45deg)', pointerEvents: 'none' }} />
           <Box sx={{ position: 'relative', borderRadius: 'inherit', bgcolor: 'background.paper', maxHeight: 'min(680px, calc(100dvh - 88px))', overflowY: 'auto' }}>
-      <DialogTitle id="life-situations-title">Life situations</DialogTitle>
-      <DialogContent><Stack spacing={2} sx={{ pt: 1 }}>
-        <Stack spacing={0.75} sx={{ alignItems: 'center' }}>
-          <Box component="button" type="button" aria-label="I want to eat something sweet" aria-pressed={choosing} onClick={() => setChoosing(true)} sx={{ width: { xs: 144, sm: 176 }, aspectRatio: '1', p: 0, borderRadius: 3, overflow: 'hidden', border: '2px solid', borderColor: choosing ? 'primary.main' : 'transparent', background: 'transparent', boxShadow: '0 6px 22px rgba(0, 0, 0, 0.22)', cursor: 'pointer', transition: 'transform 160ms ease, box-shadow 160ms ease', '&:hover': { transform: 'translateY(-2px)', boxShadow: '0 10px 26px rgba(0, 0, 0, 0.3)' }, '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 3 }, '@media (prefers-reduced-motion: reduce)': { transition: 'none' } }}>
-            <Box component="img" src={sweetIllustration} alt="" sx={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', filter: 'none' }} />
-          </Box>
-          <Typography color="text.secondary" variant="body2">I want to eat something sweet</Typography>
-        </Stack>
-        {choosing && <>
-          <Typography color="text.secondary" variant="body2">Choose a sweet</Typography>
-          <Box role="group" aria-label="Choose a sweet" sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1 }}>
-            {sweets.map((sweet) => <Box key={sweet.id} component="button" type="button" aria-label={sweet.label} aria-pressed={selected?.id === sweet.id} title={sweet.label} onClick={() => setSelected(sweet)} sx={{ display: 'grid', placeItems: 'center', minHeight: 84, borderRadius: 2, border: '2px solid', borderColor: selected?.id === sweet.id ? 'primary.main' : 'divider', color: selected?.id === sweet.id ? 'primary.main' : 'text.primary', background: 'transparent', font: 'inherit', fontWeight: 600, padding: 1, cursor: 'pointer', '&:focus-visible': { outline: '2px solid', outlineOffset: 2 } }}>{sweet.label}</Box>)}
-          </Box>
-          <TextField label="Calories (optional)" type="number" value={calories} onChange={(e) => setCalories(e.target.value)} error={calories !== '' && (!Number.isFinite(Number(calories)) || Number(calories) < 0)} slotProps={{ htmlInput: { min: 0, step: 'any', inputMode: 'decimal' } }} />
-        </>}
-        {error && <Alert severity="error">{error}</Alert>}
-      </Stack></DialogContent>
-      <DialogActions><Button className="quiet-red-action" onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>{choosing && <Button variant="contained" disabled={!selected || saving || (calories !== '' && (!Number.isFinite(Number(calories)) || Number(calories) < 0))} onClick={() => void save()}>Save</Button>}</DialogActions>
+            <DialogTitle id="life-situations-title" sx={{ px: 2, py: 1 }}>Life situations</DialogTitle>
+            <Divider />
+            <DialogContent sx={{ p: 2 }}>
+              <Stack spacing={2}>
+                {draft.step !== 'intro' && <Box>
+                  <Tooltip title="Back" arrow><IconButton className="quiet-red-action" aria-label="Back" disabled={saving} onClick={() => setDraft((value) => ({ ...value, step: value.step === 'confirm' ? 'sweets' : 'intro' }))}><ArrowBackRounded /></IconButton></Tooltip>
+                </Box>}
+                {draft.step === 'intro' && <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                  <ImageChoice large label="I want to eat something sweet" src={sweetIllustration} onChoose={() => { popoverRef.current?.focus(); setDraft((value) => ({ ...value, step: 'sweets' })) }} />
+                </Box>}
+                {draft.step === 'sweets' && <Box role="group" aria-label="Choose a sweet" sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 1 }}>
+                  {sweets.map((sweet) => <ImageChoice key={sweet.id} label={sweet.label} src={sweet.image} onChoose={() => { popoverRef.current?.focus(); setDraft((value) => ({ ...value, selectedId: sweet.id, step: 'confirm' })) }} />)}
+                </Box>}
+                {draft.step === 'confirm' && <Stack spacing={2} sx={{ alignItems: 'center' }}>
+                  <TextField label="Calories (optional)" type="number" value={calories} onChange={(event) => setDraft((value) => ({ ...value, calories: event.target.value }))} error={calories !== '' && (!Number.isFinite(Number(calories)) || Number(calories) < 0)} slotProps={{ htmlInput: { min: 0, step: 'any', inputMode: 'decimal' } }} />
+                  <Button variant="contained" disabled={!selected || saving || (calories !== '' && (!Number.isFinite(Number(calories)) || Number(calories) < 0))} onClick={() => void save()}>Save</Button>
+                </Stack>}
+                {error && <Alert severity="error">{error}</Alert>}
+              </Stack>
+            </DialogContent>
           </Box>
         </Paper>
       </ClickAwayListener>

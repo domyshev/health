@@ -11,7 +11,7 @@ import DarkModeRounded from '@mui/icons-material/DarkModeRounded'
 import BrightnessAutoRounded from '@mui/icons-material/BrightnessAutoRounded'
 import SyncRounded from '@mui/icons-material/SyncRounded'
 import QueryStatsRounded from '@mui/icons-material/QueryStatsRounded'
-import HomeRounded from '@mui/icons-material/HomeRounded'
+import FavoriteBorderRounded from '@mui/icons-material/FavoriteBorderRounded'
 import { Help } from '../features/help/Help'
 import {
   Alert,
@@ -186,7 +186,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
             <Typography sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health</Typography>
           </Stack>
           {(pathname === '/' || !pathname.startsWith('/activities/')) && <Box component="nav" aria-label="Breadcrumb" sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '1rem', fontWeight: 760, letterSpacing: '-0.04em', whiteSpace: 'nowrap' }}>
-            <HomeRounded titleAccess="Home" sx={{ fontSize: '1em', '@keyframes home-wink': { '0%, 100%': { opacity: 1 }, '50%': { opacity: 0.25 } }, '&:hover': { animation: 'home-wink 400ms ease-in-out' }, '@media (prefers-reduced-motion: reduce)': { '&:hover': { animation: 'none' } } }} />
+            <FavoriteBorderRounded titleAccess="Home" sx={{ fontSize: 'calc(1em + 8px)', color: 'primary.main', '@keyframes heart-pulse': { '0%, 9%, 18%, 33%, 42%, 51%, 66%, 75%, 84%, 93%, 100%': { transform: 'scale(1)' }, '4%, 13%, 22%, 37%, 46%, 55%, 70%, 79%, 88%, 97%': { transform: 'scale(1.22)' } }, '&:hover': { animation: 'heart-pulse 2.8s ease-in-out infinite' }, '@media (prefers-reduced-motion: reduce)': { '&:hover': { animation: 'none' } } }} />
             <Box component="span" aria-hidden="true">»</Box>
             <Typography component="h1" aria-current="page" sx={{ fontSize: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit' }}>Activities</Typography>
           </Box>}
@@ -272,7 +272,7 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
           <Route element={<ActivitiesPage />} path="*" />
         </Routes>
       </Box>
-      <Help statisticsOpen={helpStatisticsOpen} onCloseStatistics={() => setHelpStatisticsOpen(false)} />
+      <Help key={user.id} userId={user.id} statisticsOpen={helpStatisticsOpen} onCloseStatistics={() => setHelpStatisticsOpen(false)} />
       <GarminDrawer onClose={() => setDrawerOpen(false)} open={drawerOpen} />
       <Box aria-live="polite" sx={{ height: 0, overflow: 'hidden' }}>{syncLabel}</Box>
     </Box>

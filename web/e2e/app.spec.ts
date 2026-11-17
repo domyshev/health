@@ -338,3 +338,64 @@ test('back and close controls brighten on hover without a background', async ({ 
   await expect(close).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
   await expect(close).toHaveCSS('color', 'rgb(255, 133, 133)')
 })
+
+test('Life situations restores an unfinished choice within the tab', async ({ page }) => {
+  await mockBaseApi(page)
+  let savedNote = ''
+  await page.route('**/v1/help-notes', async (route) => {
+    if (route.request().method() === 'POST') {
+      const body = route.request().postDataJSON() as { note: string }
+      savedNote = body.note
+      await fulfill(route, { id: 'note-1', note: body.note, createdAt: '2026-01-01T00:00:00Z' })
+    } else await fulfill(route, { items: [] })
+  })
+  await page.goto('/')
+  const fab = page.getByRole('button', { name: /help me/i })
+  await fab.click()
+  const intro = page.getByRole('button', { name: 'I want to eat something sweet' })
+  await expect(intro).toHaveCSS('border-radius', '0px')
+  await expect(intro).toHaveCSS('border-width', '0px')
+  await expect(page.getByRole('group', { name: 'Choose a sweet' })).toHaveCount(0)
+  await expect(page.getByLabel('Calories (optional)')).toHaveCount(0)
+  await intro.click()
+  const choices = page.getByRole('group', { name: 'Choose a sweet' })
+  await expect(choices.getByRole('button')).toHaveCount(6)
+  await expect(page.getByLabel('Calories (optional)')).toHaveCount(0)
+  await expect(choices.getByRole('button', { name: 'Candy', exact: true })).toHaveCSS('border-radius', '0px')
+  await choices.getByRole('button', { name: 'Candy', exact: true }).click()
+  await page.getByLabel('Calories (optional)').fill('42')
+  await fab.click()
+  await expect(page.getByRole('dialog', { name: 'Life situations' })).toHaveCount(0)
+  await page.reload()
+  await page.getByRole('button', { name: /help me/i }).click()
+  await expect(page.getByLabel('Calories (optional)')).toHaveValue('42')
+  await page.getByRole('button', { name: 'Save' }).click()
+  await expect.poll(() => savedNote).toBe('Wanted to eat: Candy · 42 kcal')
+  await page.getByRole('button', { name: /help me/i }).click()
+  await expect(page.getByRole('button', { name: 'I want to eat something sweet' })).toBeVisible()
+})
+
+test('touch shows image tooltips until the finger is lifted', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes('mobile'), 'touch-specific flow')
+  await mockBaseApi(page)
+  await page.goto('/')
+  await page.getByRole('button', { name: /help me/i }).tap()
+  const touch = await page.context().newCDPSession(page)
+  async function hold(locator: ReturnType<typeof page.getByRole>) {
+    const box = await locator.boundingBox()
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: box!.x + box!.width / 2, y: box!.y + box!.height / 2 }] })
+  }
+  async function release() {
+    await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  }
+  await hold(page.getByRole('button', { name: 'I want to eat something sweet' }))
+  await expect(page.getByRole('tooltip')).toHaveText('I want to eat something sweet')
+  await expect(page.getByRole('group', { name: 'Choose a sweet' })).toHaveCount(0)
+  await release()
+  await expect(page.getByRole('group', { name: 'Choose a sweet' })).toBeVisible()
+  await hold(page.getByRole('button', { name: 'Candy', exact: true }))
+  await expect(page.getByRole('tooltip')).toHaveText('Candy')
+  await expect(page.getByLabel('Calories (optional)')).toHaveCount(0)
+  await release()
+  await expect(page.getByLabel('Calories (optional)')).toBeVisible()
+})

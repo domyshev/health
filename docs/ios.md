@@ -72,8 +72,10 @@ Run `npm run ios:prepare` again before archiving a production version.
 - API calls use CapacitorHttp and native URLSession, including the existing Origin
   validation and server-managed session cookies. Browser requests remain same-origin.
 - Cookies stay in native cookie storage. No session token, Garmin password, MFA
-  code, or health response is persisted in browser storage. The existing activity
-  filter preference remains the only persisted UI state.
+  code, or health response is persisted in browser storage. The activity filter
+  and theme use local storage. An unfinished Life situations choice is kept in
+  session storage for the current user and cleared after it is saved or the tab
+  session ends.
 - API requests are restricted to the configured host and `/v1/` paths. Redirects
   are disabled. Native HTTP cannot be canceled after dispatch; canceled responses
   are discarded. The native library uses its connection timeout for URLSession.
