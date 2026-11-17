@@ -1,3 +1,3 @@
-# Health Hub Garmin importer
+# Health Garmin importer
 
-This package implements the read-only Garmin Connect ingestion boundary for Health Hub.
+This package implements the read-only Garmin Connect ingestion boundary for Health.

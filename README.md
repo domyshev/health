@@ -1,4 +1,4 @@
-# health-hub
+# Health
 
 A self-hosted personal health, fitness, and nutrition data platform. The current implementation provides a responsive React dashboard, a Go JSON API with passwordless email authentication, and a read-only Garmin Connect importer with local raw-file packages, PostgreSQL persistence, incremental synchronization, and swimming normalization.
 

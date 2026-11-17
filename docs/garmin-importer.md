@@ -1,6 +1,6 @@
 # Garmin importer
 
-The importer is the only Health Hub component allowed to communicate with Garmin Connect. It uses read-only client methods, stores raw source responses, preserves the original activity download, and builds normalized PostgreSQL rows.
+The importer is the only Health component allowed to communicate with Garmin Connect. It uses read-only client methods, stores raw source responses, preserves the original activity download, and builds normalized PostgreSQL rows.
 
 ## Requirements
 

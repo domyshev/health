@@ -1,6 +1,6 @@
 # Go API and passwordless authentication
 
-The Go service in `api/` exposes the stable `/v1` contract documented in [`openapi.yaml`](openapi.yaml). It owns Health Hub users, passwordless login codes, browser sessions, and authorization. It reads normalized health data from PostgreSQL and never reads Garmin OAuth tokens or raw Garmin payloads.
+The Go service in `api/` exposes the stable `/v1` contract documented in [`openapi.yaml`](openapi.yaml). It owns Health users, passwordless login codes, browser sessions, and authorization. It reads normalized health data from PostgreSQL and never reads Garmin OAuth tokens or raw Garmin payloads.
 
 ## Build and test
 

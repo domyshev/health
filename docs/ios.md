@@ -1,12 +1,12 @@
 # iPhone application
 
-Health Hub bundles its existing React dashboard inside Capacitor's WKWebView.
+Health bundles its existing React dashboard inside Capacitor's WKWebView.
 The Go API, PostgreSQL database, and Garmin importer remain on the server. The
 app requires a network connection; offline sync, HealthKit, background sync,
 notifications, and App Store distribution are outside this implementation.
 
 The Xcode project is `web/ios/App/App.xcodeproj`. The bundle identifier is
-`com.domyshev.health`, the display name is **Health Hub**, and the deployment
+`com.domyshev.health`, the display name is **Health**, and the deployment
 target is iOS 15 or later, iPhone only.
 
 ## Prepare and run

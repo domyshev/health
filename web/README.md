@@ -1,6 +1,6 @@
-# Health Hub web client
+# Health web client
 
-React 19 personal dashboard for the Health Hub Go API. The application uses only same-origin `/v1` requests and relies on the API's Secure, HttpOnly session cookie. It never stores session tokens, Garmin passwords, MFA codes, challenges, OAuth data, or health API responses in browser storage.
+React 19 personal dashboard for the Health Go API. The application uses only same-origin `/v1` requests and relies on the API's Secure, HttpOnly session cookie. It never stores session tokens, Garmin passwords, MFA codes, challenges, OAuth data, or health API responses in browser storage.
 
 ## Development
 
