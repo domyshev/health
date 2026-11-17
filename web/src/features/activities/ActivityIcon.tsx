@@ -26,7 +26,7 @@ export function ActivityIcon({ activity, detail = false }: { activity: Activity;
         component="span"
         role="img"
         tabIndex={detail ? 0 : undefined}
-        sx={{ alignItems: 'center', backgroundColor: '#f3f4ef', borderRadius: 2.5, color: '#111', display: 'inline-flex', flexShrink: 0, height: detail ? 54 : 42, justifyContent: 'center', p: 0.75, verticalAlign: 'middle', width: detail ? 72 : 56 }}
+        sx={{ alignItems: 'center', backgroundColor: '#f3f4ef', borderRadius: 2.5, color: '#111', display: 'inline-flex', flexShrink: 0, height: detail ? 54 : 36, justifyContent: 'center', p: 0.75, verticalAlign: 'middle', width: detail ? 72 : 48 }}
       >
         {activity.type === 'elliptical' ? (
           <Box aria-hidden="true" component="svg" viewBox="0 0 64 48" sx={{ height: '100%', width: '100%' }}>

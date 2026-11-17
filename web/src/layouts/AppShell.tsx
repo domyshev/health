@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Link as RouterLink, Route, Routes, useLocation } from 'react-router-dom'
 import GarminIcon from '@mui/icons-material/WatchRounded'
 import LogoutRounded from '@mui/icons-material/LogoutRounded'
 import MenuRounded from '@mui/icons-material/MenuRounded'
@@ -52,6 +52,7 @@ import { resetUiState } from '../store'
 import { version } from '../../package.json'
 import { useThemeMode } from '../ThemeMode'
 import { HealthLogo } from '../components/HealthLogo'
+import { lighten } from '@mui/material/styles'
 
 interface AppShellProps {
   user: User
@@ -184,7 +185,11 @@ export function AppShell({ user, onLoggedOut }: AppShellProps) {
             <HealthLogo />
             <Typography sx={{ display: { xs: 'none', sm: 'block' }, fontWeight: 850, letterSpacing: '-0.03em' }} variant="h6">Health</Typography>
           </Stack>
-          {(pathname === '/' || !pathname.startsWith('/activities/')) && <Typography component="h1" sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontSize: { xs: '1.25rem', sm: 'clamp(1.5rem, calc(5vw - 8px), 3rem)' }, fontWeight: 760, letterSpacing: '-0.04em', pointerEvents: 'none' }}>Activities</Typography>}
+          {(pathname === '/' || !pathname.startsWith('/activities/')) && <Box component="nav" aria-label="Breadcrumb" sx={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '1.25rem', fontWeight: 760, letterSpacing: '-0.04em', whiteSpace: 'nowrap' }}>
+            <Link component={RouterLink} to="/" color="text.primary" underline="always" sx={{ '&:hover': { color: (theme) => lighten(theme.palette.text.primary, 0.22) } }}>Home</Link>
+            <Box component="span" aria-hidden="true">»</Box>
+            <Typography component="h1" aria-current="page" sx={{ fontSize: 'inherit', fontWeight: 'inherit', letterSpacing: 'inherit' }}>Activities</Typography>
+          </Box>}
           <Chip
             color={syncRun?.status === 'failed' ? 'error' : reconnectRequired || syncPartial ? 'warning' : 'default'}
             label={syncLabel}

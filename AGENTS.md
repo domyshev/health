@@ -28,8 +28,15 @@ another language.
 ## Application version
 
 Increase the application version for every release. Use the smallest increment
-(the patch component) unless a different increment is requested. Keep
-`web/package.json` and `web/package-lock.json` in sync; the interface displays
+(increase the patch component by one) unless a different increment is requested.
+Before deploying, compare the release with the previous successful deployment.
+If any changes have been made since that deployment, the application version
+must be higher than the previously deployed version, even for documentation,
+configuration, or minor visual changes. Never deploy changed content with the
+previously deployed version. A retry of the same unchanged release may retain
+its version.
+
+Keep `web/package.json` and `web/package-lock.json` in sync; the interface displays
 the version from `web/package.json`.
 
 ## Production deployment
